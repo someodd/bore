@@ -1,0 +1,153 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.36.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           bore
+version:        0.1.0.0
+synopsis:       Build gopherholes.
+description:    Static site builder, but for gopherholes. Manage phlogs with tags, use the Markdown renderer and Mustache templating system.
+category:       Network
+homepage:       https://github.com/someodd/bore
+bug-reports:    https://github.com/someodd/bore/issues
+author:         someodd
+maintainer:     someodd@pm.pm
+license:        GPL-3.0-only
+license-file:   LICENSE
+build-type:     Simple
+tested-with:
+    GHC==9.6.6
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+library
+  exposed-modules:
+      Bore.Parse
+      Bore.Template
+      Bore.FrontMatter
+      Bore.Text.Containers
+      Bore.Text.Figlet
+      Bore.FileLayout
+      Bore.Library
+      Bore.Phlog
+      Bore.Utils
+      Bore.Text.Gophermap
+      Bore.SpacecookieClone.Config
+      Bore.SpacecookieClone.FileType
+      Bore.SpacecookieClone.Serve
+      Bore.SpacecookieClone.Systemd
+      Bore.CLI
+  other-modules:
+      Bore.Config
+      Paths_bore
+  autogen-modules:
+      Paths_bore
+  hs-source-dirs:
+      src
+  default-extensions:
+      OverloadedStrings
+      DeriveGeneric
+      DeriveAnyClass
+      OverloadedRecordDot
+      DuplicateRecordFields
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Werror
+  build-depends:
+      aeson
+    , attoparsec
+    , base
+    , bytestring
+    , commonmark
+    , containers
+    , data-default
+    , directory
+    , fast-logger
+    , filepath
+    , filepath-bytestring
+    , filepattern
+    , frontmatter
+    , fsnotify
+    , fuzzy-dates
+    , hashable
+    , hashmap
+    , hourglass
+    , mtl
+    , mustache
+    , neat-interpolation
+    , network-uri
+    , optparse-applicative
+    , parsec
+    , raw-strings-qq
+    , socket
+    , spacecookie
+    , split
+    , systemd
+    , text
+    , time
+    , tomland
+    , unix
+    , unordered-containers
+    , vector
+    , word-wrap
+    , xml-conduit
+    , xml-conduit-writer
+    , yaml
+  default-language: GHC2021
+
+executable bore
+  main-is: Main.hs
+  other-modules:
+      Paths_bore
+  autogen-modules:
+      Paths_bore
+  hs-source-dirs:
+      app
+  default-extensions:
+      OverloadedStrings
+      DeriveGeneric
+      DeriveAnyClass
+      OverloadedRecordDot
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Werror
+  build-depends:
+      aeson
+    , attoparsec
+    , base
+    , bore
+    , bytestring
+    , commonmark
+    , containers
+    , data-default
+    , directory
+    , fast-logger
+    , filepath
+    , filepath-bytestring
+    , filepattern
+    , frontmatter
+    , fsnotify
+    , fuzzy-dates
+    , hashable
+    , hashmap
+    , hourglass
+    , mtl
+    , mustache
+    , neat-interpolation
+    , network-uri
+    , optparse-applicative
+    , parsec
+    , raw-strings-qq
+    , socket
+    , spacecookie
+    , split
+    , systemd
+    , text
+    , time
+    , tomland
+    , unix
+    , unordered-containers
+    , vector
+    , word-wrap
+    , xml-conduit
+    , xml-conduit-writer
+    , yaml
+  default-language: GHC2021

@@ -1,0 +1,13 @@
+{{! For Phlog posts. }}
+
+{{#figlet}}
+small.flf
+{{title}}
+{{/figlet}}
+
+{{#containerize}}
+debug.bc
+{{> meta.txt }}
+{{/containerize}}
+
+{{> partial}}

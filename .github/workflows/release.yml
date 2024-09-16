@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create_release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.get_version.outputs.VERSION }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: false
+
+  build:
+    name: Build and Upload Release Asset
+    needs: create_release
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Haskell
+      uses: haskell/actions/setup@v1
+      with:
+        ghc-version: '9.6.6'
+        cabal-version: '3.6'
+
+    - name: Install fpm
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ruby ruby-dev rubygems build-essential
+        sudo gem install --no-document fpm
+
+    - name: Build and Package
+      id: build_package
+      run: |
+        chmod +x ./reposcripts/package.sh
+        PACKAGE_PATH=$(./reposcripts/package.sh | tail -n1)
+        echo "package_path=$PACKAGE_PATH" >> $GITHUB_OUTPUT
+        echo "Package path: $PACKAGE_PATH"
+
+    - name: Upload Release Asset
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ${{ steps.build_package.outputs.package_path }}

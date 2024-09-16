@@ -1,0 +1,17 @@
+---
+phlog: true
+date: 2024-09-16
+parent: post.txt
+title: another
+tags: [cats, ducks]
+---
+
+this is a test file
+
+testing some more stuff
+
+what about tags, what about the links for that?
+
+{{phlog}}
+
+{{parent}}

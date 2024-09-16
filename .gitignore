@@ -1,0 +1,11 @@
+.stack-work/
+*~
+dist-newstyle/
+cabal-docspec
+built/
+output/
+result
+.direnv/
+bin/
+*.deb
+docker/id_rsa.pub

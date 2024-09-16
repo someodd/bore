@@ -1,0 +1,109 @@
+name: bore
+version: 0.1.0.0
+synopsis: Build gopherholes.
+description: |
+  Static site builder, but for gopherholes. Manage phlogs with tags, use the Markdown renderer and Mustache templating system.
+homepage: https://github.com/someodd/bore
+bug-reports: https://github.com/someodd/bore/issues
+license: GPL-3.0-only
+license-file: LICENSE
+author: someodd
+maintainer: someodd@pm.pm
+category: Network
+extra-source-files:
+  - README.md
+  - CHANGELOG.md
+tested-with: GHC==9.6.6
+
+ghc-options:
+  - -threaded
+  - -rtsopts
+  - -with-rtsopts=-N
+  - -Wall
+  - -Werror
+
+dependencies:
+  - base
+  - text
+  - filepath-bytestring
+  - socket
+  - systemd
+  - unix
+  - fast-logger
+  - fsnotify
+  - tomland
+  - xml-conduit-writer
+  - parsec
+  - data-default
+  - xml-conduit
+  - word-wrap
+  - split
+  - fuzzy-dates
+  - hourglass
+  - bytestring
+  - containers
+  - mustache
+  - filepattern
+  - hashmap
+  - directory
+  - unordered-containers
+  - filepath
+  - optparse-applicative
+  - mtl
+  - commonmark
+  - frontmatter
+  - attoparsec
+  - vector
+  - time
+  - hashable
+  - fuzzy-dates
+  - hourglass
+  - raw-strings-qq
+  - aeson
+  - network-uri
+  - neat-interpolation
+  - yaml
+  - spacecookie
+
+library:
+  source-dirs: src
+  exposed-modules:
+    - Bore.Parse
+    - Bore.Template
+    - Bore.FrontMatter
+    - Bore.Text.Containers
+    - Bore.Text.Figlet
+    - Bore.FileLayout
+    - Bore.Library
+    - Bore.Phlog
+    - Bore.Utils
+    - Bore.Text.Gophermap
+    - Bore.SpacecookieClone.Config
+    - Bore.SpacecookieClone.FileType
+    - Bore.SpacecookieClone.Serve
+    - Bore.SpacecookieClone.Systemd
+    - Bore.CLI
+  default-extensions:
+    - OverloadedStrings
+    - DeriveGeneric
+    - DeriveAnyClass
+    - OverloadedRecordDot
+    - DuplicateRecordFields
+  default-language: GHC2021
+
+executables:
+  bore:
+    main: Main.hs
+    source-dirs: app
+    dependencies:
+      - bore
+    autogen-modules:
+      - Paths_bore
+    other-modules:
+      - Paths_bore
+    default-extensions:
+      - OverloadedStrings
+      - DeriveGeneric
+      - DeriveAnyClass
+      - OverloadedRecordDot
+    default-language: GHC2021

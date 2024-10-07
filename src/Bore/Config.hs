@@ -23,7 +23,6 @@ data ServerConfig = ServerConfig
   , listenAddress :: Maybe Text
   , listenPort :: Maybe Integer
   , user :: Maybe Text
-  , root :: Maybe Text
   } deriving (Generic, Show, Eq)
 
 serverConfigCodec :: TomlCodec ServerConfig

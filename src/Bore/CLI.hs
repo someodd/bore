@@ -42,7 +42,7 @@ watchServe absoluteSourcePath absoluteOutputPath = do
   buildTree absoluteSourcePath absoluteOutputPath
 
   putStrLn $ "Starting server and watching for changes in source: " ++ absoluteSourcePath
-  
+
   -- Watch the directory for changes and rebuild on changes
   withManager $ \mgr -> do
     _ <- watchTree
@@ -55,7 +55,8 @@ watchServe absoluteSourcePath absoluteOutputPath = do
     -- Keep the watcher alive
     --changeWorkingDirectory projectRootPath
     library <- loadOnce absoluteSourcePath
-    runServerWithConfig library.config.server
+    -- modify the config to use the output directory as the root. this could just be the config value if it was not overridden in the cli
+    runServerWithConfig library.config.server absoluteOutputPath
     forever $ threadDelay 1000000
 
 data Command = WatchServe (Maybe FilePath) (Maybe FilePath) | Build (Maybe FilePath) (Maybe FilePath)
@@ -79,7 +80,7 @@ watchServeParser = WatchServe
   <*> optional (strOption
       ( long "output"
      <> metavar "OUTPUT_DIR"
-     <> help "Output directory" ))
+     <> help "Output directory which will also be served." ))
 
 buildParser :: Parser Command
 buildParser = Build

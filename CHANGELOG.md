@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+Gearing up for server daemon.
+
+### Added
+
+* output directory gets wiped before building to output
+* special assets directory which doesn't get wiped
+
+### Removed
+
+* No more `root` specification in the `bore.toml`, this is
+  simply derived from either `--output` or the default.
+
 ## [0.2.0.0] - 2024-10-07
 
 ### Added

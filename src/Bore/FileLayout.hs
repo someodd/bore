@@ -11,11 +11,20 @@ things according to project layout rules, and nothing more specific.
 
 module Bore.FileLayout where
 
-import Control.Monad (filterM)
-import System.Directory (listDirectory, doesDirectoryExist, copyFile, createDirectoryIfMissing, canonicalizePath)
+import Control.Monad (filterM, when, forM_)
+import System.Directory (listDirectory, doesDirectoryExist, copyFile, createDirectoryIfMissing, canonicalizePath, removeDirectoryRecursive, removeFile)
 import System.FilePath ((</>), makeRelative, takeFileName, takeDirectory)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as TextIO
+
+{- | Directory which "gets left alone" during the build process, i.e., it won't get
+cleared out of output.
+
+Relative to the OUTPUT directory.
+
+-}
+assetsDirectoryName :: RelativePath
+assetsDirectoryName = "assets"
 
 -- | Relative to the current working directory. This may get moved to FileLayout.
 defaultSourceDirectoryName :: RelativePath
@@ -225,3 +234,21 @@ onlyCopyFile projectDirectory destination filePath = do
     copyFile filePath fullTargetPath
     let relativePath = makeRelative fullTargetDirectory fullTargetPath
     pure (fullTargetPath, relativePath)
+
+{- | Clear out the output directory, but leave the assets directory alone.
+
+Be sure to use an absolute path.
+
+-}
+resetOutputDirectory :: AbsolutePath -> IO ()
+resetOutputDirectory outputDir = do
+    -- List all items in the output directory
+    contents <- listDirectory outputDir
+    forM_ contents $ \item -> do
+        let itemPath = outputDir </> item
+        -- Delete the item if it is not the "assets" folder
+        when (item /= assetsDirectoryName) $ do
+            isDir <- doesDirectoryExist itemPath
+            if isDir
+                then removeDirectoryRecursive itemPath
+                else removeFile itemPath

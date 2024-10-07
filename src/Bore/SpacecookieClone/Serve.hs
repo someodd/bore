@@ -26,7 +26,7 @@ import Data.Bifunctor (first)
 import Data.ByteString.Builder (Builder ())
 import Data.Either (rights)
 import Data.Maybe (fromMaybe)
-import System.Directory (doesFileExist, getDirectoryContents, canonicalizePath)
+import System.Directory (doesFileExist, getDirectoryContents)
 import System.Exit
 import System.FilePath.Posix.ByteString ( RawFilePath, takeFileName, (</>)
                                         , dropDrive, decodeFilePath
@@ -40,18 +40,12 @@ import qualified Data.Text as T
 {- | Convert a config from Bore to the config Spacecookie expects.
 
 -}
-boreConfigToConfig :: BoreConfig.ServerConfig -> IO SpaceConfig.Config
-boreConfigToConfig boreConfig = do
-  rootDirectory <-
-    case boreConfig.root of
-      Nothing -> do
-        canonicalizePath defaultOutputDirectoryName
-      Just root ->
-        pure $ T.unpack root
+boreConfigToConfig :: BoreConfig.ServerConfig -> AbsolutePath -> IO SpaceConfig.Config
+boreConfigToConfig boreConfig absoluteOutputPath = do
   pure $ SpaceConfig.Config
     { serverName = encodeUtf8 $ boreConfig.hostname
     , runUserName = T.unpack <$> boreConfig.user
-    , rootDirectory = rootDirectory
+    , rootDirectory = absoluteOutputPath
     , listenAddr = maybe (Just "::") (Just . encodeUtf8) boreConfig.listenAddress
     , serverPort = fromMaybe 70 (fromIntegral <$> boreConfig.listenPort)
     , logConfig = SpaceConfig.LogConfig
@@ -62,9 +56,9 @@ boreConfigToConfig boreConfig = do
         }
     }
 
-runServerWithConfig :: BoreConfig.ServerConfig -> IO ()
-runServerWithConfig boreConfig = do
-  config <- boreConfigToConfig boreConfig
+runServerWithConfig :: BoreConfig.ServerConfig -> AbsolutePath -> IO ()
+runServerWithConfig boreConfig absoluteOutputPath = do
+  config <- boreConfigToConfig boreConfig absoluteOutputPath
   changeWorkingDirectory (rootDirectory config)
   (logHandler, logStopAction) <- fromMaybe (Nothing, pure ())
     . fmap (first Just) <$> makeLogHandler (logConfig config)

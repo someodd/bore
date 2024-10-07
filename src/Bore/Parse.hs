@@ -150,6 +150,8 @@ buildTree sourceDirectory outputDirectory = do
     sourceDirectoryAbsolutePath <- canonicalizePath sourceDirectory
     outputDirectoryAbsolutePath <- canonicalizePath outputDirectory
 
+    _ <- resetOutputDirectory outputDirectoryAbsolutePath
+
     putStrLn "load library"
     library <- loadOnce sourceDirectoryAbsolutePath
     putStrLn "outside library finished back in builttree"

@@ -33,6 +33,8 @@ mkdir -p $TEMPORARY_PKG_DIR/var/gopher/source
 cp ./bin/bore $TEMPORARY_PKG_DIR/usr/local/bin/bore
 # Copy the systemd service file to the temporary package directory
 cp ./reposcripts/bore.service $TEMPORARY_PKG_DIR/etc/systemd/system/bore.service
+# Copy this for the daemon
+cp ./reposcripts/bore.toml $TEMPORARY_PKG_DIR/var/gopher/source/bore.toml
 
 # Run fpm to create the Debian package.
 fpm -s dir -t deb -n bore -v ${VERSION} \
@@ -46,7 +48,8 @@ fpm -s dir -t deb -n bore -v ${VERSION} \
     usr/local/bin/bore \
     etc/systemd/system/bore.service \
     var/gopher/output \
-    var/gopher/source
+    var/gopher/source \
+    var/gopher/source/bore.toml
 
 # Clean up the temporary package directory
 rm -rf $TEMPORARY_PKG_DIR

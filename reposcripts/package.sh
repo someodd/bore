@@ -43,7 +43,8 @@ fpm -s dir -t deb -n bore -v ${VERSION} \
     --license "GPL" \
     -p "${OUTPUT_PATH}" \
     -C $TEMPORARY_PKG_DIR \
-    usr/local/bin/bore
+    usr/local/bin/bore \
+    etc/systemd/system/bore.service
 
 # Clean up the temporary package directory
 rm -rf $TEMPORARY_PKG_DIR

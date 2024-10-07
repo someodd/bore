@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.4.0.0] - 2024-10-07
+
+### Removed/Changed
+
+* `.parseable.gophermap` removed, because `.gophermap`s are now parseable by default
+
+### Fixed
+
+* Old behavior leftover which used to generate `.gophermap` to `.gophermap/.gophermap`
+
 ## [0.3.0.0] - 2024-10-07
 
 Gearing up for server daemon.
@@ -29,7 +39,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.3.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.4.0.0...HEAD
+[0.4.0.0]: https://github.com/someodd/bore/compare/v0.3.0.1...v0.4.0.0
 [0.3.0.0]: https://github.com/someodd/bore/compare/v0.2.0.0...v0.3.0.0
 [0.2.0.0]: https://github.com/someodd/bore/compare/v0.1.0.0...v0.2.0.0
 [0.1.0.0]: https://github.com/someodd/bore/releases/tag/v0.1.0.0

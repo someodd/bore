@@ -25,9 +25,14 @@ stack build --copy-bins --local-bin-path ./bin
 
 # Create necessary directories in the temporary package directory
 mkdir -p $TEMPORARY_PKG_DIR/usr/local/bin
+mkdir -p $TEMPORARY_PKG_DIR/etc/systemd/system
+mkdir -p $TEMPORARY_PKG_DIR/var/gopher/output
+mkdir -p $TEMPORARY_PKG_DIR/var/gopher/source
 
 # Copy the built binary to the temporary package directory
 cp ./bin/bore $TEMPORARY_PKG_DIR/usr/local/bin/bore
+# Copy the systemd service file to the temporary package directory
+cp ./reposcripts/bore.service $TEMPORARY_PKG_DIR/etc/systemd/system/bore.service
 
 # Run fpm to create the Debian package.
 fpm -s dir -t deb -n bore -v ${VERSION} \

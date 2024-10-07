@@ -1,0 +1,12 @@
+[Unit]
+Description=Bore Daemon
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/bore watchServe --source /var/gopher/source --output /var/gopher/output
+Restart=always
+User=nobody
+Group=nogroup
+
+[Install]
+WantedBy=multi-user.target

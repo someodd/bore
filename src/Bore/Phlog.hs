@@ -168,7 +168,6 @@ filterToPhlogMeta :: [(FilePath, FilePath, Maybe FrontMatter)] -> [PhlogMeta]
 filterToPhlogMeta copiedFileMeta = do
     [(fullPath, relativePath, frontMatter) | (fullPath, relativePath, Just frontMatter) <- copiedFileMeta, isPhlogPost frontMatter]
 
--- FIXME: link is wrong.
 -- TODO: could add a manual "summary" field to the frontmatter to use in the index?
 {- | Create an atom feed of phlog posts.
 

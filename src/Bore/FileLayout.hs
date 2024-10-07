@@ -13,7 +13,7 @@ module Bore.FileLayout where
 
 import Control.Monad (filterM, when, forM_)
 import System.Directory (listDirectory, doesDirectoryExist, copyFile, createDirectoryIfMissing, canonicalizePath, removeDirectoryRecursive, removeFile)
-import System.FilePath ((</>), makeRelative, takeFileName, takeDirectory)
+import System.FilePath ((</>), makeRelative, takeFileName)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as TextIO
 
@@ -98,7 +98,7 @@ containersDirectory = "containers/"
 
 -}
 onlyParse :: [String]
-onlyParse = [".gopher.txt", ".gopher.md", parseableGophermapFileName]
+onlyParse = [".gopher.txt", ".gopher.md", gophermapFileName]
 
 {- | Relative file path to write the phlog index to.
 
@@ -196,13 +196,11 @@ createDestinationDirectory projectDirectory outputDirectory sourceFilePath = do
 
 {- | Standaredized writing-to-destination.
 
-"Destination" here being the target directory being written to. Ensures directories
-created.
+Ensures directories created.
+
+@@destinationDirectory@@: target directory being written to.
 
 Not just for parseable files.
-
-Will also make a decision about the actual destination path to write to, namely
-if the file is a `parseableGophermapFileName`, to write it to a `gophermapFileName`.
 
 -}
 writeDest :: FilePath -> FilePath -> FilePath -> Text.Text -> IO (RelativePath, AbsolutePath)
@@ -210,19 +208,12 @@ writeDest projectDirectory sourceFilePath destinationDirectory fileContents = do
     let
         relativePath = makeRelative projectDirectory sourceFilePath
         fullDestination = destinationDirectory </> relativePath
-        fullDestinationDir = takeDirectory fullDestination
 
     -- Create the directory if it does not exist
-    createDirectoryIfMissing True fullDestinationDir
+    createDirectoryIfMissing True fullDestination
 
-    -- Handle special case where we change the write out file name in the event
-    -- of handling `parseableGophermapFileName`.
-    let finalDestination = if takeFileName sourceFilePath == parseableGophermapFileName
-                           then destinationDirectory </> gophermapFileName
-                           else fullDestination
-
-    TextIO.writeFile finalDestination fileContents
-    pure (relativePath, finalDestination)
+    TextIO.writeFile fullDestination fileContents
+    pure (relativePath, fullDestination)
 
 {- | Simply copy a file according to project layout rules.
 

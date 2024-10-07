@@ -27,6 +27,8 @@ sudo service bore restart
 
 Now you should be able to edit/place files in `/var/gopher/source` and you can visit gopher://whateveryourhostname:7071/1/ in a Gopher Client like [Lagrange](https://gmi.skyjake.fi/lagrange/), `lynx`, `gopher`, or even [Dillo](https://dillo-browser.github.io/). I also made my own client [Waffle](https://github.com/someodd/waffle), but I don't recommend that unless you're Haskell-saavy at the moment.
 
+The *assets* directory doesn't get touched when the goperhole is rebuilt. So it's a good idea to put large files here.
+
 If you have any trouble try:
 
 ```

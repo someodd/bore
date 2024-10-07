@@ -50,8 +50,7 @@ fpm -s dir -t deb -n bore -v ${VERSION} \
     usr/local/bin/bore \
     etc/systemd/system/bore.service \
     var/gopher/output \
-    var/gopher/source \
-    var/gopher/source/bore.toml
+    var/gopher/source
 
 # Clean up the temporary package directory
 rm -rf $TEMPORARY_PKG_DIR

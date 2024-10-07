@@ -33,13 +33,33 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Cache Stack dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.stack
+          .stack-work
+        key: ${{ runner.os }}-stack-${{ hashFiles('**/stack.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-stack-
+
     - name: Setup Haskell
-      uses: haskell/actions/setup@v1
+      uses: haskell-actions/setup@v2
       with:
         ghc-version: '9.6.6'
-        cabal-version: '3.6'
+        enable-stack: 'true'
+        stack-version: 'latest'
+
+    - name: Cache fpm
+      uses: actions/cache@v3
+      with:
+        path: /usr/local/bundle
+        key: ${{ runner.os }}-fpm-${{ hashFiles('**/Gemfile.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-fpm-
 
     - name: Install fpm
+      if: steps.cache_fpm.outputs.cache-hit != 'true'
       run: |
         sudo apt-get update
         sudo apt-get install -y ruby ruby-dev rubygems build-essential

@@ -14,4 +14,4 @@ listenAddress = "::"
 listenPort = 70
 # This is the user the server runs as. This is useful for dropping privileges. The default
 # is the user that started the server, so that can be null. Uncomment to define.
-#user = "nobody"
+user = "bore"

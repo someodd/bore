@@ -44,6 +44,7 @@ fpm -s dir -t deb -n bore -v ${VERSION} \
     --maintainer "someodd <someodd@pm.me>" \
     --url "http://www.someodd.zip/showcase/bore" \
     --license "GPL" \
+    --after-install ./reposcripts/post-install.sh \
     -p "${OUTPUT_PATH}" \
     -C $TEMPORARY_PKG_DIR \
     usr/local/bin/bore \

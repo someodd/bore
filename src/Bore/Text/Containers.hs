@@ -213,9 +213,7 @@ loadContainers containerDirectory = do
   let artboxFiles = filter (".bc" `isSuffixOf`) files
   forM artboxFiles $ \file -> do
     let filePath = containerDirectory </> file
-    putStrLn "about to parse container"
     result <- parseContainer filePath
-    putStrLn "parsed container"
     case result of
       Left err -> error $ "Error parsing " ++ filePath ++ ": " ++ show err
       Right config -> return (makeRelative containerDirectory filePath, config)

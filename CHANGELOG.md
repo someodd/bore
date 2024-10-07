@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+* Was attempting to parse directories as files just because they matched the parseable file whitelist
+
 ## [0.4.0.0] - 2024-10-07
 
 ### Removed/Changed

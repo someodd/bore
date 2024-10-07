@@ -40,10 +40,7 @@ data Library = Library
 loadOnce :: FilePath -> IO Library
 loadOnce sourceDirectory = do
     -- FIXME: should define containersDirectory here
-    putStrLn (sourceDirectory </> containersDirectory)
     containers <- loadContainers (sourceDirectory </> containersDirectory)
-    putStrLn "loaded containers loadonce outside"
     fonts <- loadFigletFonts (sourceDirectory </> figletFontDirectory)
     config <- getConfig (sourceDirectory </> projectConfigFile)
-    putStrLn "finished library basically"
     pure $ Library { containers = containers, fonts = fonts, config = config }

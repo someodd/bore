@@ -13,7 +13,7 @@ module Bore.FileLayout where
 
 import Control.Monad (filterM, when, forM_)
 import System.Directory (listDirectory, doesDirectoryExist, copyFile, createDirectoryIfMissing, canonicalizePath, removeDirectoryRecursive, removeFile)
-import System.FilePath ((</>), makeRelative, takeFileName)
+import System.FilePath ((</>), makeRelative, takeFileName, takeDirectory)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as TextIO
 
@@ -208,9 +208,10 @@ writeDest projectDirectory sourceFilePath destinationDirectory fileContents = do
     let
         relativePath = makeRelative projectDirectory sourceFilePath
         fullDestination = destinationDirectory </> relativePath
+        fullDestinationDir = takeDirectory fullDestination
 
     -- Create the directory if it does not exist
-    createDirectoryIfMissing True fullDestination
+    createDirectoryIfMissing True fullDestinationDir
 
     TextIO.writeFile fullDestination fileContents
     pure (relativePath, fullDestination)

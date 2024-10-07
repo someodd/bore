@@ -57,7 +57,7 @@ import Data.Maybe (fromMaybe, catMaybes)
 
 import System.Directory (doesDirectoryExist)
 
--- FIXME: TODO: add markdown
+-- FIXME: TODO: add markdown?
 {- | Parse a file, returning the full destination path, the relative destination path, and
 (maybe) the frontmatter.
 
@@ -115,18 +115,21 @@ Changes the output destination if the file is a `parseableGophermapFileName`.
 
 -}
 handleFile :: Library -> FilePath -> FilePath -> FilePath -> IO (Maybe (FilePath, FilePath, Maybe FrontMatter))
-handleFile library projectDirectory destination filePath
-    -- parse the file
-    | takeFullExtension filePath `elem` onlyParse = do
-        putStrLn filePath
-        Just <$> parseFile library projectDirectory filePath destination
-    -- just copy the file
-    | otherwise = do
-        isDir <- doesDirectoryExist filePath
-        if isDir
+handleFile library projectDirectory destination filePath = do
+    -- It's important to check if it's a directory first, because we don't want to match
+    -- directories as parseable files just because they have a file extension we are
+    -- looking for.
+    isDir <- doesDirectoryExist filePath
+    if isDir
+        then do
+            putStrLn $ "creating directory: " ++ filePath
+            createDestinationDirectory projectDirectory destination filePath >> pure Nothing
+        else if takeFullExtension filePath `elem` onlyParse
             then do
-                createDestinationDirectory projectDirectory destination filePath >> pure Nothing
+                putStrLn $ "parse the file: " ++ filePath
+                Just <$> parseFile library projectDirectory filePath destination
             else do
+                putStrLn $ "only copy file: " ++ filePath
                 (fullPath, relativePath) <- onlyCopyFile projectDirectory destination filePath
                 pure $ Just (fullPath, relativePath, Nothing)
 
@@ -152,20 +155,15 @@ buildTree sourceDirectory outputDirectory = do
 
     _ <- resetOutputDirectory outputDirectoryAbsolutePath
 
-    putStrLn "load library"
     library <- loadOnce sourceDirectoryAbsolutePath
-    putStrLn "outside library finished back in builttree"
 
     -- Get all the files in the project directory, recursively
     absoluteIgnorePaths <- canonIgnorePaths sourceDirectoryAbsolutePath ignorePaths
-    putStrLn $ "finished absoluteIgnorePaths: " ++ show absoluteIgnorePaths
     filesToCopy <- getFilePathsRecursive absoluteIgnorePaths sourceDirectoryAbsolutePath
-    putStrLn $ "finished filesToCopy: " ++ show filesToCopy
     allCopiedFiles <- handleAllFiles library sourceDirectoryAbsolutePath outputDirectoryAbsolutePath filesToCopy
     -- Build the phlog from the collected file paths and frontmatter.
     let phlogMeta = filterToPhlogMeta allCopiedFiles
     -- FIXME: doing the maybe logic here and elsewhere is very bad--should occur in Config.hs with defaults\
-    putStrLn "about to build phlog indexes"
     buildPhlogIndexes
         (library.config.server.hostname)
         (fromMaybe 70 (fromIntegral <$> library.config.server.listenPort))

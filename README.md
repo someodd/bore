@@ -12,7 +12,7 @@ Here are some features, but I recommend checking out `example/` for an example g
 
 * Moustache templating! {{like this for variables}}, but even figlet font functions and ASCII art container support
 * Bundled with a Gopher Protocol server
-* FrontMatter support, you can choose if something is to become a gophermap/menu
+* FrontMatter support, you can choose if something is to become a gophermap/menu (you can even use the [.gophermap standard](https://sternenseemann.github.io/spacecookie/spacecookie.gophermap.5.html) for writing those!)
 * Phlogging (blogging) support, with a generated Atom feed and tag and main indexes
 
 ## Quickstart

@@ -6,6 +6,15 @@ I made this because I wanted to rebuild my [Burrow](https://github.com/someodd/b
 
 It comes with its own Gopher Protocol server (ripped from [spacecookie](https://github.com/sternenseemann/spacecookie), but the gopherhole it builds can be used by pretty much any Gopher server.
 
+## Features
+
+Here are some features, but I recommend checking out `example/` for an example gopherhole:
+
+* Moustache templating! {{like this for variables}}, but even figlet font functions and ASCII art container support
+* Bundled with a Gopher Protocol server
+* FrontMatter support, you can choose if something is to become a gophermap/menu
+* Phlogging (blogging) support, with a generated Atom feed and tag and main indexes
+
 ## Quickstart
 
 Just download the lastest `.deb` from the releases.

@@ -27,13 +27,14 @@ stack build --copy-bins --local-bin-path ./bin
 mkdir -p $TEMPORARY_PKG_DIR/usr/local/bin
 mkdir -p $TEMPORARY_PKG_DIR/etc/systemd/system
 mkdir -p $TEMPORARY_PKG_DIR/var/gopher/output
-mkdir -p $TEMPORARY_PKG_DIR/var/gopher/source
 
 # Copy the built binary to the temporary package directory
 cp ./bin/bore $TEMPORARY_PKG_DIR/usr/local/bin/bore
 # Copy the systemd service file to the temporary package directory
 cp ./reposcripts/bore.service $TEMPORARY_PKG_DIR/etc/systemd/system/bore.service
-# Copy this for the daemon
+# Copy the example gopherhole to the temporary package directory
+cp -r ./example $TEMPORARY_PKG_DIR/var/gopher/source
+# Copy this/overwrite for the daemon
 cp ./reposcripts/bore.toml $TEMPORARY_PKG_DIR/var/gopher/source/bore.toml
 
 # Run fpm to create the Debian package.

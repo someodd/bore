@@ -31,74 +31,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup Haskell
-      uses: haskell-actions/setup@v2
-      with:
-        ghc-version: '9.6.6'
-        enable-stack: 'true'
-        stack-version: 'latest'
+      - name: Setup Haskell
+        uses: haskell-actions/setup@v2
+        with:
+          ghc-version: '9.6.6'
+          enable-stack: 'true'
+          stack-version: 'latest'
 
-    # Cache GHC installations (programs)
-    - name: Cache GHC installations
-      uses: actions/cache@v3
-      with:
-        path: ~/.stack/programs
-        key: ${{ runner.os }}-ghc-${{ hashFiles('**/stack.yaml.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-ghc-
+      - name: Cache Stack dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.stack
+            !~/.stack/programs
+            ./.stack-work
+          key: ${{ runner.os }}-stack-${{ hashFiles('stack.yaml', 'package.yaml') }}
 
-    # Cache Stack binary
-    - name: Cache Stack binary
-      uses: actions/cache@v3
-      with:
-        path: ~/.local/bin/stack
-        key: ${{ runner.os }}-stack-bin-${{ hashFiles('**/stack.yaml.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-stack-bin-
+      - name: Install fpm
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ruby ruby-dev rubygems build-essential
+          sudo gem install --no-document fpm
 
-    # Cache Stack packages (dependencies)
-    - name: Cache Stack packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.stack
-        key: ${{ runner.os }}-stack-${{ hashFiles('**/stack.yaml.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-stack-
+      - name: Build and Package
+        id: build_package
+        run: |
+          chmod +x ./reposcripts/package.sh
+          PACKAGE_PATH=$(./reposcripts/package.sh | tail -n1)
+          echo "package_path=$PACKAGE_PATH" >> $GITHUB_OUTPUT
+          echo "Package path: $PACKAGE_PATH"
 
-    - name: Cache Ruby gems
-      uses: actions/cache@v3
-      with:
-        path: vendor/bundle
-        key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-gems-
-
-    - name: Cache fpm
-      uses: actions/cache@v3
-      with:
-        path: /usr/local/bundle
-        key: ${{ runner.os }}-fpm-${{ hashFiles('**/Gemfile.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-fpm-
-
-    - name: Install fpm
-      if: steps.cache_fpm.outputs.cache-hit != 'true'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y ruby ruby-dev rubygems build-essential
-        sudo gem install --no-document fpm
-
-    - name: Build and Package
-      id: build_package
-      run: |
-        chmod +x ./reposcripts/package.sh
-        PACKAGE_PATH=$(./reposcripts/package.sh | tail -n1)
-        echo "package_path=$PACKAGE_PATH" >> $GITHUB_OUTPUT
-        echo "Package path: $PACKAGE_PATH"
-
-    - name: Upload Release Asset
-      uses: softprops/action-gh-release@v1
-      with:
-        files: ${{ steps.build_package.outputs.package_path }}
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ steps.build_package.outputs.package_path }}

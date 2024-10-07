@@ -11,7 +11,7 @@ hostname = "gopher.someodd.zip"
 listenAddress = "::"
 # This is the port the server listens on. The default is 70 (I think this is the port the
 # Gopher Protocol RFC 1436 specifies).
-listenPort = 70
+listenPort = 7071
 # This is the user the server runs as. This is useful for dropping privileges. The default
 # is the user that started the server, so that can be null. Uncomment to define.
 user = "bore"

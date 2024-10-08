@@ -110,12 +110,12 @@ If it's a directory, the return is nothing.
 
 Changes the output destination if the file is a `parseableGophermapFileName`.
 
-@@destination@@ is the full absolute path to the output directory.
+@@outputDirectory@@ is the full absolute path to the output/destination directory.
 @@filePath@@ absolute path to the file being handled. Should be absolute path to the source file.
 
 -}
 handleFile :: Library -> FilePath -> FilePath -> FilePath -> IO (Maybe (FilePath, FilePath, Maybe FrontMatter))
-handleFile library projectDirectory destination filePath = do
+handleFile library sourceDirectory outputDirectory filePath = do
     -- It's important to check if it's a directory first, because we don't want to match
     -- directories as parseable files just because they have a file extension we are
     -- looking for.
@@ -123,14 +123,16 @@ handleFile library projectDirectory destination filePath = do
     if isDir
         then do
             putStrLn $ "creating directory: " ++ filePath
-            createDestinationDirectory projectDirectory destination filePath >> pure Nothing
+            _ <- createDestinationDirectoryForFile outputDirectory sourceDirectory filePath
+            pure Nothing
         else if takeFullExtension filePath `elem` onlyParse
             then do
                 putStrLn $ "parse the file: " ++ filePath
-                Just <$> parseFile library projectDirectory filePath destination
+                Just <$> parseFile library sourceDirectory filePath outputDirectory
             else do
                 putStrLn $ "only copy file: " ++ filePath
-                (fullPath, relativePath) <- onlyCopyFile projectDirectory destination filePath
+                -- FIXME: this is copying files and making a directory for them that includes their name!
+                (fullPath, relativePath) <- onlyCopyFile sourceDirectory outputDirectory filePath
                 pure $ Just (fullPath, relativePath, Nothing)
 
 {- | Helper function to get all the handle all files passed, returning metadata regarding

@@ -178,22 +178,7 @@ takeFullExtension path =
     let fileName = takeFileName path
     in if '.' `elem` fileName then dropWhile (/= '.') fileName else ""
 
-{- | Create a destination directory.
-
-@outputDirectory@ is the full absolute path to the output directory.
-
--}
-createDestinationDirectory
-    :: FilePath
-    -> FilePath
-    -> FilePath
-    -> IO FilePath
-createDestinationDirectory projectDirectory outputDirectory sourceFilePath = do
-    
-    let fullDestination = outputDirectory </> makeRelative projectDirectory (projectDirectory </> sourceFilePath)
-    createDirectoryIfMissing True fullDestination
-    pure fullDestination
-
+-- FIXME: is this just crud?
 {- | Standaredized writing-to-destination.
 
 Ensures directories created.
@@ -203,29 +188,37 @@ Ensures directories created.
 Not just for parseable files.
 
 -}
-writeDest :: FilePath -> FilePath -> FilePath -> Text.Text -> IO (RelativePath, AbsolutePath)
-writeDest projectDirectory sourceFilePath destinationDirectory fileContents = do
+writeDest :: FilePath -> AbsolutePath -> FilePath -> Text.Text -> IO (RelativePath, AbsolutePath)
+writeDest sourceDirectory fullSourceFilePath outputDirectory fileContents = do
+    (fullFileDestination, relativeFilePath) <- createDestinationDirectoryForFile outputDirectory sourceDirectory fullSourceFilePath
+    TextIO.writeFile fullFileDestination fileContents
+    pure (relativeFilePath, fullFileDestination)
+
+createDestinationDirectoryForFile :: FilePath -> FilePath -> AbsolutePath -> IO (AbsolutePath, FilePath)
+createDestinationDirectoryForFile outputDirectory sourceDirectory fullSourceFilePath = do
     let
-        relativePath = makeRelative projectDirectory sourceFilePath
-        fullDestination = destinationDirectory </> relativePath
-        fullDestinationDir = takeDirectory fullDestination
+        -- Make the relative path to the source file, so it works for both output and source directories
+        relativeFilePath = makeRelative sourceDirectory fullSourceFilePath
+        -- now make the relative directory path based on above
+        relativeDirectoryPath = takeDirectory relativeFilePath
+        -- now we can figure the full destination/output directory to copy the file to
+        fullDirectoryDestination = outputDirectory </> relativeDirectoryPath
+        -- finally we also want to know the full destination path for the file itself
+        fullFileDestination = fullDirectoryDestination </> takeFileName fullSourceFilePath
 
-    -- Create the directory if it does not exist
-    createDirectoryIfMissing True fullDestinationDir
-
-    TextIO.writeFile fullDestination fileContents
-    pure (relativePath, fullDestination)
+    _ <- createDirectoryIfMissing True fullDirectoryDestination
+    pure (fullFileDestination, relativeFilePath)
 
 {- | Simply copy a file according to project layout rules.
 
+@@fullSourceFilePath@@ is the full absolute path to the source file to be copied.
+
 -}
-onlyCopyFile :: FilePath -> FilePath -> FilePath -> IO (FilePath, RelativePath)
-onlyCopyFile projectDirectory destination filePath = do
-    fullTargetDirectory <- createDestinationDirectory projectDirectory destination filePath
-    let fullTargetPath = fullTargetDirectory </> takeFileName filePath
-    copyFile filePath fullTargetPath
-    let relativePath = makeRelative fullTargetDirectory fullTargetPath
-    pure (fullTargetPath, relativePath)
+onlyCopyFile :: FilePath -> FilePath -> AbsolutePath -> IO (FilePath, RelativePath)
+onlyCopyFile sourceDirectory outputDirectory fullSourceFilePath = do
+    (fullFileDestination, relativeFilePath) <- createDestinationDirectoryForFile outputDirectory sourceDirectory fullSourceFilePath
+    copyFile fullSourceFilePath fullFileDestination
+    pure (fullFileDestination, relativeFilePath)
 
 {- | Clear out the output directory, but leave the assets directory alone.
 

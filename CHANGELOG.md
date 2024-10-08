@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Fixed
+
+* Fix creating directories that have the name of the file name it's copying for every file
+  to simply be copied, not parsed (and fix up the directory creation logic in general for
+  some related things)
+
 ## [0.5.0.0] - 2024-10-07
 
 ### Fixed

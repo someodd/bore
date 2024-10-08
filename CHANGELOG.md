@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.6.0.0] - 2024-10-07
+
 ### Fixed
 
 * Fix creating directories that have the name of the file name it's copying for every file
@@ -51,7 +53,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.5.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.6.0.0...HEAD
+[0.6.0.0]: https://github.com/someodd/bore/compare/v0.5.0.0...v0.6.0.0
 [0.5.0.0]: https://github.com/someodd/bore/compare/v0.4.0.0...v0.5.0.0
 [0.4.0.0]: https://github.com/someodd/bore/compare/v0.3.0.1...v0.4.0.0
 [0.3.0.0]: https://github.com/someodd/bore/compare/v0.2.0.0...v0.3.0.0

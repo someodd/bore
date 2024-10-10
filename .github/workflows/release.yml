@@ -42,7 +42,7 @@ jobs:
 
       - name: Compute Cache Key
         id: cache_key
-        run: echo "key=$(tail -n +3 package.yaml | sha256sum | cut -d ' ' -f1)" >> $GITHUB_ENV
+        run: echo "key=$(grep -v '^version:' package.yaml | sha256sum | cut -d ' ' -f1)" >> $GITHUB_ENV
         
       - name: Cache Stack dependencies
         uses: actions/cache@v3

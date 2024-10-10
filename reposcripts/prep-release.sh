@@ -14,11 +14,19 @@ SUGGESTED_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print $1"."$2+1".0.0"}')
 # Ask the user for the version, defaulting to the suggestion.
 read -p "Version [was: $CURRENT_VERSION -> suggested: $SUGGESTED_VERSION]: " VERSION
 
+# If the user didn't enter a version, use the suggested version.
+if [ -z "$VERSION" ]; then
+    VERSION=$SUGGESTED_VERSION
+fi
+
 # Update the version in package.yaml
+sed -i -E "s/^version: [0-9]+(\.[0-9]+)*$/version: $VERSION/" package.yaml
+
+# Update the version in bore.cabal
 sed -i -E "s/^version: [0-9]+(\.[0-9]+)*$/version: $VERSION/" package.yaml
 
 # Update the `CHANGELOG.md``
 ./reposcripts/update-changelog.sh "$VERSION"
 
 # Suggest the the tag command
-echo "git tag -a v$VERSION -m \"message here\""
+echo "git tag -a v$VERSION -m \"release v$VERSION\""

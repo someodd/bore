@@ -28,5 +28,10 @@ sed -i -E "s/^version: [0-9]+(\.[0-9]+)*$/version: $VERSION/" package.yaml
 # Update the `CHANGELOG.md``
 ./reposcripts/update-changelog.sh "$VERSION"
 
-# Suggest the the tag command
+echo "Please look over the changes, prepare for the release, then make the commit, and finally tag the release."
+
+# Suggest the commit command
+echo "git commit -m \"Prepare for release v$VERSION\""
+
+# Suggest the tag command
 echo "git tag -a v$VERSION -m \"release v$VERSION\""

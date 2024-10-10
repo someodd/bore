@@ -243,7 +243,7 @@ phlogIndexLinks hostname port tagLinks mainIndexLink feedLink =
         content =
             "\n\nPHLOG INDEXES\n\n" <>
             gopherLink "1" "Main Phlog Index" (Text.pack mainIndexLink) hostname port <>
-            gopherLink "1" "Phlog Atom Feed" (Text.pack feedLink) hostname port <>
+            gopherLink "0" "Phlog Atom Feed" (Text.pack feedLink) hostname port <>
             "\nTags\n" <>
             foldMap (\(tag, tagLink) -> gopherLink "1" tag (Text.pack $ "/" </> tagLink) hostname port) tagLinks
     in
@@ -262,7 +262,7 @@ buildPhlogIndexes hostname port outputPath phlogMeta = do
     let
         sortedPhlogMeta = sortPhlogMetaByDate phlogMeta
         unreliableTagPaths = unreliablyGetTagIndexPaths sortedPhlogMeta
-        mainPhlogIndexPath = "/" </> phlogDirectory </> gophermapFileName
+        mainPhlogIndexPath = "/" </> phlogDirectory
         phlogFeedPath = "/" </> phlogDirectory </> phlogFeedName
         epilogue = phlogIndexLinks hostname port unreliableTagPaths mainPhlogIndexPath phlogFeedPath
 

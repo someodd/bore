@@ -5,7 +5,6 @@
 
 module Bore.FrontMatter 
     ( FrontMatter(..)
-    , isPhlogPost
     , isGophermap
     , parseFrontMatter
     ) where
@@ -40,24 +39,6 @@ data FrontMatter = FrontMatter {
 -}
 isGophermap :: FrontMatter -> Bool
 isGophermap frontmatter = fromMaybe False (frontmatter.gophermap)
-
-{- | Determines if the frontmatter indicates a phlog post.
-
-The function `isPhlogPost` takes a `FrontMatter` record and returns a `Bool` indicating whether the `phlog` field in the frontmatter is `True`. If the `phlog` field is `Nothing`, it returns `False`.
-
-Examples:
-
->>> isPhlogPost (FrontMatter { phlog = Just True })
-True
-
->>> isPhlogPost (FrontMatter { phlog = Just False })
-False
-
->>> isPhlogPost (FrontMatter { phlog = Nothing })
-False
--}
-isPhlogPost :: FrontMatter -> Bool
-isPhlogPost frontmatter = fromMaybe False (frontmatter.phlog)
 
 -- | Function to extract and parse frontmatter from Text
 parseFrontMatter :: Text.Text -> Either ParseException (FrontMatter, Text.Text)

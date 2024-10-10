@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Added
+
+* Buffed-up the indexes so they actually link to the tag indexes, atom feed, and main index.
+
+### Changed
+
+* You can no longer mark a post as a phlog post with FrontMatter. Now you must place it in
+  the phlog/ directory. All indexes and phlog posts are also output to the phlog/ directory.
+  Tag indexes will go in phlog/tags.
+
 ## [0.6.0.0] - 2024-10-07
 
 ### Fixed

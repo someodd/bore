@@ -1,5 +1,4 @@
 ---
-phlog: true
 date: 2024-09-16
 parent: post.txt
 title: cozy

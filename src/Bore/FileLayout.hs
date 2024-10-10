@@ -80,6 +80,20 @@ directory.
 -}
 type RelativePath = FilePath
 
+{- | Directory where all phlog posts are kept and where phlog indexes are written.
+
+-}
+phlogDirectory :: RelativePath
+phlogDirectory = "phlog/"
+
+{- | Where tag indexes are written to.
+
+Relative to the output directory and the phlog directory.
+
+-}
+tagIndexesDirectory :: RelativePath
+tagIndexesDirectory = "tags/"
+
 {- | Directory containing all the figlet fonts.
 
 Relative path.
@@ -169,7 +183,7 @@ This is because I like using .double.exts
 You can also use it reliably for files that are "hidden files"
 in this way:
 
->>> takeFullExtension $ "/path/to/" ++ parseableGophermapFileName
+>>> takeFullExtension $ "/path/to/" ++ ".parseable.gophermap"
 ".parseable.gophermap"
 
 -}

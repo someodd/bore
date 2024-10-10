@@ -11,7 +11,7 @@ import Bore.FrontMatter
 import Bore.FileLayout
 import Bore.Text.Gophermap
 
-import Data.List (nub, sortOn)
+import Data.List (nub, sortOn, isPrefixOf)
 import Time.Types (dateYear)
 import Data.Dates.Parsing
 import qualified Data.Text as Text
@@ -19,6 +19,17 @@ import Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Text.IO as TextIO
 import System.FilePath ((</>), takeFileName, takeDirectory)
 import System.Directory (createDirectoryIfMissing)
+
+{- | Determines if the frontmatter indicates a phlog post.
+
+Simply checks if the base directory of the file is the phlog directory.
+
+This won't work for symlinks (?) and doesn't guard against `../`.
+
+-}
+isPhlogPost :: RelativePath -> Bool
+isPhlogPost relativePathToPost =
+    phlogDirectory `isPrefixOf` relativePathToPost
 
 -- FIXME: maybe delete
 {- | Create a summary of a phlog post for the phlog index file
@@ -132,25 +143,34 @@ Can be used to create different indexes if you simply filter phlogmeta by tag fo
 Creates a valid gophermap format menu.
 
 -}
-buildPhlogIndex :: Text.Text -> Int -> FilePath -> FilePath -> Text.Text -> [PhlogMeta] -> IO ()
-buildPhlogIndex hostname port outputDirectory outputFilename indexTitle sortedPhlogMeta = do
+buildPhlogIndex :: Text.Text -> Int -> FilePath -> FilePath -> Text.Text -> Text.Text -> [PhlogMeta] -> IO ()
+buildPhlogIndex hostname port outputDirectory outputFilename indexTitle epilogue sortedPhlogMeta = do
     -- Now create a `Text` where it lists the phlog post summaries, grouped under year headings.
     let
         lumpedByYear = lumpPhlogMetaByYear sortedPhlogMeta
-        phlogIndexContent = indexTitle <> "\n\n" <> foldMap (\(year, phlogPosts) -> (Text.pack . show $ year) <> "\n" <> foldMap (\phlogMeta -> gopherPhlogLink phlogMeta hostname port) phlogPosts) lumpedByYear
+        phlogIndexContent = indexTitle <> "\n\n" <> foldMap (\(year, phlogPosts) -> (Text.pack . show $ year) <> "\n" <> foldMap (\phlogMeta -> gopherPhlogLink phlogMeta hostname port) phlogPosts) lumpedByYear <> epilogue
         outputFullPath = outputDirectory </> outputFilename
     TextIO.writeFile outputFullPath (toGophermap hostname port phlogIndexContent)
 
 {- | Create phlog indexes for each tag in the phlog meta.
 
 -}
-buildPhlogTagIndexes :: Text.Text -> Int -> FilePath -> [PhlogMeta] -> IO ()
-buildPhlogTagIndexes hostname port outputDirectory phlogMeta = do
-    let
-        tags = nub $ concatMap (\(_, _, frontMatter) -> fromMaybe [] (frontMatter.tags)) phlogMeta
+buildPhlogTagIndexes :: Text.Text -> Int -> FilePath -> Text.Text -> [PhlogMeta] -> IO ()
+buildPhlogTagIndexes hostname port outputDirectory epilogue phlogMeta = do
+    let tags = nub $ concatMap (\(_, _, frontMatter) -> fromMaybe [] (frontMatter.tags)) phlogMeta
     -- now for each tag create an index using buildPhlogIndex, passing every phlot post with that tag
-    _ <- mapM (\tag -> buildPhlogIndex hostname port outputDirectory (Text.unpack tag) tag (filterPhlogMetaByTag tag phlogMeta)) tags
+    _ <- mapM (\tag -> buildPhlogIndex hostname port outputDirectory (Text.unpack tag) tag epilogue (filterPhlogMetaByTag tag phlogMeta)) tags
     pure ()
+
+{- | Get all the tag index paths.
+
+This could break if the buildPhlogTagIndexes write paths are actually different than seen here.
+    
+-}
+unreliablyGetTagIndexPaths :: [PhlogMeta] -> [(Text.Text, RelativePath)]
+unreliablyGetTagIndexPaths phlogMeta =
+    let tags = nub $ concatMap (\(_, _, frontMatter) -> fromMaybe [] (frontMatter.tags)) phlogMeta
+    in map (\tag -> (tag, phlogDirectory </> Text.unpack tag)) tags
 
 {- | Filter some `[PhlogMeta]` by tag.
 
@@ -166,7 +186,7 @@ type PhlogMeta = (AbsolutePath, RelativePath, FrontMatter)
 -}
 filterToPhlogMeta :: [(FilePath, FilePath, Maybe FrontMatter)] -> [PhlogMeta]
 filterToPhlogMeta copiedFileMeta = do
-    [(fullPath, relativePath, frontMatter) | (fullPath, relativePath, Just frontMatter) <- copiedFileMeta, isPhlogPost frontMatter]
+    [(fullPath, relativePath, frontMatter) | (fullPath, relativePath, Just frontMatter) <- copiedFileMeta, isPhlogPost relativePath]
 
 -- TODO: could add a manual "summary" field to the frontmatter to use in the index?
 {- | Create an atom feed of phlog posts.
@@ -214,6 +234,21 @@ buildPhlogFeed writePath feedTitle sortedPhlogMeta = do
     TextIO.writeFile writePath feedContent
     pure writePath
 
+{- | Create Text which links to all the phlog indexes.
+
+-}
+phlogIndexLinks :: Text.Text -> Int -> [(Text.Text, RelativePath)] -> RelativePath -> RelativePath -> Text.Text
+phlogIndexLinks hostname port tagLinks mainIndexLink feedLink =
+    let
+        content =
+            "PHLOG INDEXES\n\n" <>
+            gopherLink "1" "Main Phlog Index" (Text.pack $ "/" </> phlogDirectory </> mainIndexLink) hostname port <>
+            gopherLink "1" "Phlog Atom Feed" (Text.pack $ "/" </> phlogDirectory </> feedLink) hostname port <>
+            "Tags\n" <>
+            foldMap (\(tag, tagLink) -> gopherLink "1" tag (Text.pack $ "/" </> phlogDirectory </> tagIndexesDirectory </> tagLink) hostname port) tagLinks
+    in
+        toGophermap hostname port content
+
 {- | Build the phlog from a list of phlog files' frontmatter and their respective file paths.
 
 (Absolute path, relative path, frontmatter)
@@ -224,9 +259,16 @@ buildPhlogFeed writePath feedTitle sortedPhlogMeta = do
 -}
 buildPhlogIndexes :: Text.Text -> Int -> FilePath -> [PhlogMeta] -> IO ()
 buildPhlogIndexes hostname port outputPath phlogMeta = do
-    let sortedPhlogMeta = sortPhlogMetaByDate phlogMeta
-    _ <- createDirectoryIfMissing True (outputPath </> phlogIndexDirectory)
-    _ <- buildPhlogIndex hostname port (outputPath </> phlogIndexDirectory) gophermapFileName "All Phlog Posts" sortedPhlogMeta  -- Builds the main index
-    _ <- buildPhlogTagIndexes hostname port (outputPath </> phlogIndexDirectory) sortedPhlogMeta
-    _ <- buildPhlogFeed (outputPath </> phlogIndexDirectory </> phlogFeedName) "Main Phlog Index" sortedPhlogMeta
+    let
+        sortedPhlogMeta = sortPhlogMetaByDate phlogMeta
+        unreliableTagPaths = unreliablyGetTagIndexPaths sortedPhlogMeta
+        mainPhlogIndexPath = outputPath </> phlogDirectory </> gophermapFileName
+        phlogFeedPath = outputPath </> phlogDirectory </> phlogFeedName
+        epilogue = phlogIndexLinks hostname port unreliableTagPaths mainPhlogIndexPath phlogFeedPath
+
+    _ <- createDirectoryIfMissing True (outputPath </> phlogDirectory </> tagIndexesDirectory)
+    _ <- createDirectoryIfMissing True (outputPath </> phlogDirectory)
+    _ <- buildPhlogIndex hostname port (outputPath </> phlogDirectory) gophermapFileName "All Phlog Posts" epilogue sortedPhlogMeta
+    _ <- buildPhlogTagIndexes hostname port (outputPath </> phlogDirectory </> tagIndexesDirectory) epilogue sortedPhlogMeta
+    _ <- buildPhlogFeed (outputPath </> phlogDirectory </> phlogFeedName) "Main Phlog Index" sortedPhlogMeta
     pure ()

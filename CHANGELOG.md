@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.8.0.0] - 2024-10-09
+
+### Fixed
+
+* Fixed phlog index links
+
 ## [0.7.0.0] - 2024-10-09
 
 ### Added
@@ -65,7 +71,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.7.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.8.0.0...HEAD
+[0.8.0.0]: https://github.com/someodd/bore/compare/v0.7.0.0...v0.8.0.0
 [0.7.0.0]: https://github.com/someodd/bore/compare/v0.6.0.0...v0.7.0.0
 [0.6.0.0]: https://github.com/someodd/bore/compare/v0.5.0.0...v0.6.0.0
 [0.5.0.0]: https://github.com/someodd/bore/compare/v0.4.0.0...v0.5.0.0

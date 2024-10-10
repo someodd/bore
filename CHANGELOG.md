@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+* Tag link errors for indexes. I'm being lazy and not testing.
+
 ## [0.9.0.0] - 2024-10-09
 
 ### Fixed

@@ -1,3 +1,5 @@
+-- FIXME: the duplication of having to figure out the tag paths over and over is bad and
+-- leads to errors.
 {- | Construct phlog indexes.
 
 This module works by having an entrypoint which you can pass filemeta to and
@@ -170,7 +172,7 @@ This could break if the buildPhlogTagIndexes write paths are actually different 
 unreliablyGetTagIndexPaths :: [PhlogMeta] -> [(Text.Text, RelativePath)]
 unreliablyGetTagIndexPaths phlogMeta =
     let tags = nub $ concatMap (\(_, _, frontMatter) -> fromMaybe [] (frontMatter.tags)) phlogMeta
-    in map (\tag -> (tag, phlogDirectory </> Text.unpack tag)) tags
+    in map (\tag -> (tag, phlogDirectory </> tagIndexesDirectory </> Text.unpack tag)) tags
 
 {- | Filter some `[PhlogMeta]` by tag.
 
@@ -245,7 +247,7 @@ phlogIndexLinks hostname port tagLinks mainIndexLink feedLink =
             gopherLink "1" "Main Phlog Index" (Text.pack mainIndexLink) hostname port <>
             gopherLink "0" "Phlog Atom Feed" (Text.pack feedLink) hostname port <>
             "\nTags\n" <>
-            foldMap (\(tag, tagLink) -> gopherLink "1" tag (Text.pack $ "/" </> tagLink) hostname port) tagLinks
+            foldMap (\(tag, tagLink) -> gopherLink "1" tag (Text.pack $ "/" </> tagLink ) hostname port) tagLinks
     in
         toGophermap hostname port content
 

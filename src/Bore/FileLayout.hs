@@ -42,12 +42,6 @@ Minimal rules for serving and building the project.
 projectConfigFile :: RelativePath
 projectConfigFile = "bore.toml"
 
-{- | Directory to keep phlog index files in.
-
--}
-phlogIndexDirectory :: RelativePath
-phlogIndexDirectory = "phlog_indexes/"
-
 {- | Filename for bucktooth-style gophermaps, which work in spacecookie.
 
 These files will simply be copied, but this name will also be used to create

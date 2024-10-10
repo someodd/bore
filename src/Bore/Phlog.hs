@@ -241,11 +241,11 @@ phlogIndexLinks :: Text.Text -> Int -> [(Text.Text, RelativePath)] -> RelativePa
 phlogIndexLinks hostname port tagLinks mainIndexLink feedLink =
     let
         content =
-            "PHLOG INDEXES\n\n" <>
-            gopherLink "1" "Main Phlog Index" (Text.pack $ "/" </> phlogDirectory </> mainIndexLink) hostname port <>
-            gopherLink "1" "Phlog Atom Feed" (Text.pack $ "/" </> phlogDirectory </> feedLink) hostname port <>
-            "Tags\n" <>
-            foldMap (\(tag, tagLink) -> gopherLink "1" tag (Text.pack $ "/" </> phlogDirectory </> tagIndexesDirectory </> tagLink) hostname port) tagLinks
+            "\n\nPHLOG INDEXES\n\n" <>
+            gopherLink "1" "Main Phlog Index" (Text.pack mainIndexLink) hostname port <>
+            gopherLink "1" "Phlog Atom Feed" (Text.pack feedLink) hostname port <>
+            "\nTags\n" <>
+            foldMap (\(tag, tagLink) -> gopherLink "1" tag (Text.pack $ "/" </> tagLink) hostname port) tagLinks
     in
         toGophermap hostname port content
 
@@ -262,8 +262,8 @@ buildPhlogIndexes hostname port outputPath phlogMeta = do
     let
         sortedPhlogMeta = sortPhlogMetaByDate phlogMeta
         unreliableTagPaths = unreliablyGetTagIndexPaths sortedPhlogMeta
-        mainPhlogIndexPath = outputPath </> phlogDirectory </> gophermapFileName
-        phlogFeedPath = outputPath </> phlogDirectory </> phlogFeedName
+        mainPhlogIndexPath = "/" </> phlogDirectory </> gophermapFileName
+        phlogFeedPath = "/" </> phlogDirectory </> phlogFeedName
         epilogue = phlogIndexLinks hostname port unreliableTagPaths mainPhlogIndexPath phlogFeedPath
 
     _ <- createDirectoryIfMissing True (outputPath </> phlogDirectory </> tagIndexesDirectory)

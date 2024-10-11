@@ -35,6 +35,69 @@ If you have any trouble try:
 sudo journalctl -u bore.service
 ```
 
+## Tip: easily update server
+
+Copy content to your output/assets directory or the source directory.
+
+### Server setup
+
+Create the required directories:
+
+```
+sudo mkdir -p /var/gopher/.ssh
+sudo chown -R bore:bore /var/gopher/.ssh
+sudo chmod 700 /var/gopher/.ssh
+```
+
+Then add SSH public key for the `bore` user in `/var/gopher/.ssh/authorized_keys`:
+
+```
+ssh-rsa AAAAB3Nza... your_key_here
+```
+
+Then add the following lines to your `/etc/ssh/sshd_config`:
+
+```
+Match User bore
+    ChrootDirectory /var/gopher
+    AuthorizedKeysFile /var/gopher/.ssh/authorized_keys
+    ForceCommand internal-sftp
+    PermitTunnel no
+    AllowAgentForwarding no
+    AllowTcpForwarding no
+    X11Forwarding no
+```
+
+Set chroot permissions:
+
+```
+sudo chown root:root /var/gopher
+sudo chmod 755 /var/gopher
+```
+
+Finalize some permissions:
+
+```
+sudo chown -R bore:bore /var/gopher/.ssh
+sudo chown -R bore:bore /var/gopher/source
+sudo chown -R bore:bore /var/gopher/output
+
+```
+
+Finally restart `sudo systemctl restart ssh`, although you may also want to `sudo service bore restart`.
+
+### Copying to server (from client)
+
+Install `lsftp`:
+
+```
+sudo apt-get install lsftp
+```
+
+```
+lftp -e "mirror -R /path/to/local_directory /source/; quit" -u bore sftp://simulacra
+```
+
 ## Plans to port from Burrow
 
 * Columnation

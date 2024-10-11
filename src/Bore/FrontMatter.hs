@@ -10,6 +10,9 @@ module Bore.FrontMatter
     ) where
 
 import GHC.Generics (Generic)
+import Data.Aeson (ToJSON)
+import Text.Mustache (ToMustache(..))
+import qualified Text.Mustache.Types as MType
 import qualified Data.Text as Text
 import Data.Yaml (FromJSON, decodeEither', ParseException(..))
 import Data.Maybe (fromMaybe)
@@ -33,6 +36,13 @@ data FrontMatter = FrontMatter {
     -- defined parent.
     variables :: Maybe (Map.Map Text.Text Text.Text)
     } deriving (Show, Data, Typeable, Generic, FromJSON)
+
+-- Automatically derive ToJSON for FrontMatter
+instance ToJSON FrontMatter
+
+-- Use mFromJSON to convert FrontMatter to a Mustache Value
+instance ToMustache FrontMatter where
+  toMustache = MType.mFromJSON
 
 {- | Determines if the frontmatter indicates to parse as a gopher menu/gophermap.
     

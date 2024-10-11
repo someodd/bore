@@ -23,11 +23,9 @@ import qualified Data.Map as Map
 
 import Bore.FrontMatter (FrontMatter(..), parent)
 import Data.Maybe (fromMaybe)
-import Control.Arrow ((&&&))
 
 import Bore.Text.Containers (applyContainer, ContainerCache)
 import Bore.Library (Library(..))
-import Bore.Utils (genericToPairs)
 import Bore.Text.Figlet
 
 -- FIXME: will get removed
@@ -85,6 +83,13 @@ dataForMustache =
 
 -}
 type MustacheSubstitutions = [(Text.Text, Mtype.Value)]
+
+-- | Convert a Mustache object to a list of key-value pairs.
+--
+-- Will just give back a blank list if the Value is not an object.
+toSubstitutions :: Mtype.Value -> MustacheSubstitutions
+toSubstitutions (Mtype.Object obj) = H.toList obj
+toSubstitutions _ = []
 
 -- Global variables which can be access by a Mustache file being parsed.
 --
@@ -152,17 +157,19 @@ Helps build lambdas too, which use the library.
 initialSubstitutions :: Library -> Maybe FrontMatter -> MustacheSubstitutions
 initialSubstitutions library maybeFrontMatter =
   let
-    postFm = substitutionsFromFrontMatter maybeFrontMatter (genericToPairs <$> maybeFrontMatter)
+    -- FIXME: why is there this doubling-up on the effort of translating the frontmatter, seemingly? just because it can't handle lists?
+    postFm = substitutionsFromFrontMatter maybeFrontMatter (toSubstitutions . toMustache <$> maybeFrontMatter)
   in
     postFm ++ [
       ("containerize", overText (lambdaContainerize library.containers)),
       ("figlet", overText (lambdaFiglet library.fonts))
     ]
  where
+  -- FIXME; if i want to add tagging support i'd add it here for hardcoding
   -- | Add substitutions based off of FrontMatter.
-  substitutionsFromFrontMatter ::  Maybe FrontMatter -> Maybe [(Text.Text, Text.Text)] -> MustacheSubstitutions
-  substitutionsFromFrontMatter maybeFrontMatter' variablePairs =
-    let hardcodedFrontMatterVars = fromMaybe [] (variablePairs >>= Just . map (id . fst &&& Mtype.String . snd)) ++ defaultTemplateSubstitutions
+  substitutionsFromFrontMatter ::  Maybe FrontMatter -> Maybe MustacheSubstitutions -> MustacheSubstitutions
+  substitutionsFromFrontMatter maybeFrontMatter' possibleHardcodedSubstitutions =
+    let hardcodedFrontMatterVars = fromMaybe [] possibleHardcodedSubstitutions ++ defaultTemplateSubstitutions
         -- specially handle the "variables" field in the frontmatter
         userFrontMatterVars = fromMaybe [] ( maybeFrontMatter' >>= \fm -> fmap (Map.toList . Map.map (Mtype.String)) $ variables fm ) :: [(Text.Text, Mtype.Value)]
     in hardcodedFrontMatterVars ++ userFrontMatterVars

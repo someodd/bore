@@ -93,6 +93,12 @@ sudo apt-get install lftp
 lftp -e "mirror -R /path/to/local_directory /source/; quit" -u bore sftp://simulacra
 ```
 
+Or to ensure old files are delted:
+
+```
+lftp -e "mirror -R --delete ./ /source/; quit" -u bore sftp://simulacra
+```
+
 ## Plans to port from Burrow
 
 * Columnation

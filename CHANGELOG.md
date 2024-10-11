@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.11.0.0] - 2024-10-11
+
+### Fixed
+
+* You can now reference 'tags' frontmatter in template (as a list)
+
 ## [0.10.0.0] - 2024-10-09
 
 ### Fixed
@@ -83,7 +89,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.10.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.11.0.0...HEAD
+[0.11.0.0]: https://github.com/someodd/bore/compare/v0.10.0.0...v0.11.0.0
 [0.10.0.0]: https://github.com/someodd/bore/compare/v0.9.0.0...v0.10.0.0
 [0.9.0.0]: https://github.com/someodd/bore/compare/v0.8.0.0...v0.9.0.0
 [0.8.0.0]: https://github.com/someodd/bore/compare/v0.7.0.0...v0.8.0.0

@@ -88,10 +88,10 @@ Finally restart `sudo systemctl restart ssh`, although you may also want to `sud
 
 ### Copying to server (from client)
 
-Install `lsftp`:
+Install `lftp`:
 
 ```
-sudo apt-get install lsftp
+sudo apt-get install lftp
 ```
 
 ```

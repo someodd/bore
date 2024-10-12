@@ -89,14 +89,22 @@ Install `lftp`:
 sudo apt-get install lftp
 ```
 
+Now if you want to copy your source directory (local to remote):
+
 ```
 lftp -e "mirror -R /path/to/local_directory /source/; quit" -u bore sftp://simulacra
 ```
 
-Or to ensure old files are delted:
+... or to ensure old files are deleted (mirror remote/local):
 
 ```
 lftp -e "mirror -R --delete ./ /source/; quit" -u bore sftp://simulacra
+```
+
+Just copy a single file to assets folder:
+
+```
+lftp -e "put -O /output/assets/ 'cool picture.jpg'; quit" -u bore sftp://simulacra
 ```
 
 ## Plans to port from Burrow

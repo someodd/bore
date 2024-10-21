@@ -7,6 +7,7 @@ https://github.com/sternenseemann/spacecookie/
 {-# LANGUAGE OverloadedStrings #-}
 module Bore.SpacecookieClone.Serve where
 
+import Bore.SpacecookieClone.Search
 import Bore.SpacecookieClone.Config
 import Bore.SpacecookieClone.FileType
 import Bore.SpacecookieClone.Systemd
@@ -14,6 +15,7 @@ import qualified Bore.Config as BoreConfig
 import Bore.SpacecookieClone.Config as SpaceConfig
 import Bore.FileLayout
 
+import Data.Text.Encoding (decodeUtf8)
 import Network.Gopher
 import Network.Gopher.Util (sanitizePath, boolToMaybe, dropPrivileges)
 import Network.Gopher.Util.Gophermap
@@ -133,33 +135,45 @@ makeLogHandler lc =
 noLog :: GopherLogHandler
 noLog = const . const $ pure ()
 
+-- Function to handle search functionality
 spacecookie :: GopherLogHandler -> GopherRequest -> IO GopherResponse
 spacecookie logger req = do
   let selector = requestSelector req
       path = "." </> dropDrive (sanitizePath selector)
-  pt <- gopherFileType path
 
-  case pt of
-    Left PathIsNotAllowed ->
-      pure . ErrorResponse $ mconcat
-        [ "Accessing '",  selector, "' is not allowed." ]
-    Left PathDoesNotExist -> pure $
-      if "URL:" `B.isPrefixOf` selector
-        then ErrorResponse $ mconcat
-          [ "spacecookie does not support proxying HTTP, "
-          , "try using a gopher client that supports URL: selectors. "
-          , "If you tried to request a resource called '"
-          , selector, "', it does not exist." ]
-        else ErrorResponse $ mconcat
-          [ "The requested resource '", selector
-          , "' does not exist or is not available." ]
-    Right ft ->
-      case ft of
-        Error -> pure $ ErrorResponse $ "An unknown error occurred"
-        -- always use gophermapResponse which falls back
-        -- to directoryResponse if there is no gophermap file
-        Directory -> gophermapResponse logger path
-        _ -> fileResponse logger path
+  -- this could be updated to be nicer by using gopher request data type
+  -- Handle /search selector
+  case requestSearchString req of
+    Just searchString ->
+      if "/search" == selector
+        then do
+          let query = T.strip $ decodeUtf8 searchString
+          getSearchResults query "."
+        else do
+          -- error, not supported endpoint
+          pure $ ErrorResponse "You can only perform searches on /search"
+    Nothing -> do
+      pt <- gopherFileType path
+
+      case pt of
+        Left PathIsNotAllowed ->
+          pure . ErrorResponse $ mconcat
+            [ "Accessing '",  selector, "' is not allowed." ]
+        Left PathDoesNotExist -> pure $
+          if "URL:" `B.isPrefixOf` selector
+            then ErrorResponse $ mconcat
+              [ "spacecookie does not support proxying HTTP, "
+              , "try using a gopher client that supports URL: selectors. "
+              , "If you tried to request a resource called '"
+              , selector, "', it does not exist." ]
+            else ErrorResponse $ mconcat
+              [ "The requested resource '", selector
+              , "' does not exist or is not available." ]
+        Right ft ->
+          case ft of
+            Error -> pure $ ErrorResponse $ "An unknown error occurred"
+            Directory -> gophermapResponse logger path
+            _ -> fileResponse logger path
 
 fileResponse :: GopherLogHandler -> RawFilePath -> IO GopherResponse
 fileResponse _ path = FileResponse <$> B.readFile (decodeFilePath path)

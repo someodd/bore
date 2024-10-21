@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           bore
-version:        0.10.0.0
+version:        0.11.0.0
 synopsis:       Build gopherholes.
 description:    Static site builder, but for gopherholes. Manage phlogs with tags, use the Markdown renderer and Mustache templating system.
 category:       Network
@@ -24,23 +24,25 @@ extra-source-files:
 
 library
   exposed-modules:
-      Bore.Parse
-      Bore.Template
-      Bore.FrontMatter
-      Bore.Text.Containers
-      Bore.Text.Figlet
+      Bore.CLI
+      Bore.Config
       Bore.FileLayout
+      Bore.FrontMatter
       Bore.Library
+      Bore.Parse
       Bore.Phlog
-      Bore.Utils
-      Bore.Text.Gophermap
       Bore.SpacecookieClone.Config
       Bore.SpacecookieClone.FileType
+      Bore.SpacecookieClone.Search
       Bore.SpacecookieClone.Serve
       Bore.SpacecookieClone.Systemd
-      Bore.CLI
+      Bore.Template
+      Bore.Text.Clean
+      Bore.Text.Containers
+      Bore.Text.Figlet
+      Bore.Text.Gophermap
+      Bore.Utils
   other-modules:
-      Bore.Config
       Paths_bore
   autogen-modules:
       Paths_bore
@@ -62,6 +64,7 @@ library
     , containers
     , data-default
     , directory
+    , edit-distance
     , fast-logger
     , filepath
     , filepath-bytestring
@@ -119,6 +122,7 @@ executable bore
     , containers
     , data-default
     , directory
+    , edit-distance
     , fast-logger
     , filepath
     , filepath-bytestring

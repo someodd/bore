@@ -32,6 +32,13 @@ packages:
       size: 2328
   original:
     hackage: spacecookie-1.0.0.2@sha256:499ebafa27578efd9cd41e75731ed6fdefeec7d5f0b21a1f494d54481f2c5a22,4232
+- completed:
+    hackage: fuzzyfind-3.0.2@sha256:0fcd64eb1016fe0d0232abc26b2b80b32d676707ff41d155a28df8a9572603d4,1921
+    pantry-tree:
+      sha256: 5bb9d39dbc4a619cf9b65409dde0d58dd488c7abab030f71ac83ba849595ee05
+      size: 542
+  original:
+    hackage: fuzzyfind-3.0.2@sha256:0fcd64eb1016fe0d0232abc26b2b80b32d676707ff41d155a28df8a9572603d4,1921
 snapshots:
 - completed:
     sha256: edbd50d7e7c85c13ad5f5835ae2db92fab1e9cf05ecf85340e2622ec0a303df1

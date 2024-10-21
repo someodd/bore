@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+* Search functionality: search on /search with the watchServe daemon
+
 ## [0.11.0.0] - 2024-10-11
 
 ### Fixed

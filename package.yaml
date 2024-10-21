@@ -64,25 +64,10 @@ dependencies:
   - neat-interpolation
   - yaml
   - spacecookie
+  - edit-distance
 
 library:
   source-dirs: src
-  exposed-modules:
-    - Bore.Parse
-    - Bore.Template
-    - Bore.FrontMatter
-    - Bore.Text.Containers
-    - Bore.Text.Figlet
-    - Bore.FileLayout
-    - Bore.Library
-    - Bore.Phlog
-    - Bore.Utils
-    - Bore.Text.Gophermap
-    - Bore.SpacecookieClone.Config
-    - Bore.SpacecookieClone.FileType
-    - Bore.SpacecookieClone.Serve
-    - Bore.SpacecookieClone.Systemd
-    - Bore.CLI
   default-extensions:
     - OverloadedStrings
     - DeriveGeneric

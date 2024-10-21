@@ -17,6 +17,12 @@ import System.FilePath ((</>), makeRelative, takeFileName, takeDirectory)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as TextIO
 
+{- | Location of the full text search index file.
+
+-}
+fullTextSearchIndexFile :: RelativePath
+fullTextSearchIndexFile = "search_index"
+
 {- | Directory which "gets left alone" during the build process, i.e., it won't get
 cleared out of output.
 

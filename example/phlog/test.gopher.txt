@@ -14,6 +14,8 @@ what about tags, what about the links for that?
 
 0Link to another file	/another.gopher.txt
 
+7Search	/search
+
 test
 
 {{phlog}}

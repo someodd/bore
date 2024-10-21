@@ -10,7 +10,7 @@ this is a test file
 
 testing some more stuff
 
-what about tags, what about the links for that?
+what tags, what the links for that?
 
 {{phlog}}
 

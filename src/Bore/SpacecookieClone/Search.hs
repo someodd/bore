@@ -260,14 +260,12 @@ makeSearchResult :: AbsolutePath -> (FilePath, Bool, Int, [Text]) -> [GopherMenu
 makeSearchResult absoluteOutputPath (fp, isMenu, _, contexts) =
   makeLink selector : map makeSummary contexts
   where
-    selector = makeRelative absoluteOutputPath fp
+    selector = "/" </> makeRelative absoluteOutputPath fp
     makeSummary summary' = makeInfoLine $ E.encodeUtf8 summary'
     makeLink selector' =
       Item
         (if isMenu then Directory else File)
-        -- Doing drop 1 because the way the search system works is it's all relative
-        -- because of Serve.hs cd'ing into the directory.
-        (C8.pack . drop 1 $ selector')
-        (C8.pack . drop 1 $ selector')
+        (C8.pack selector')
+        (C8.pack selector')
         Nothing
         Nothing

@@ -165,7 +165,7 @@ searchDocuments keywords sourceDirectoryAbsolutePath absoluteOutputPath = do
     mapM
       ( \fp -> do
           content <- loadFileContent fp
-          (isMenu, hackedContent) <- gophermapHack fp content sourceDirectoryAbsolutePath
+          (isMenu, hackedContent) <- gophermapHack fp content sourceDirectoryAbsolutePath absoluteOutputPath
           pure (fp, isMenu, hackedContent)
       )
       docPaths
@@ -180,9 +180,11 @@ searchDocuments keywords sourceDirectoryAbsolutePath absoluteOutputPath = do
       docs
 
 -- | Check if a file is a gophermap. If it is, return the content without the gophermap syntax.
-gophermapHack :: FilePath -> Text -> AbsolutePath -> IO (Bool, Text)
-gophermapHack fp content sourceDirectoryAbsolutePath = do
-  let pathHackToLoadFrontMatter = sourceDirectoryAbsolutePath </> fp
+gophermapHack :: FilePath -> Text -> AbsolutePath -> AbsolutePath -> IO (Bool, Text)
+gophermapHack fp content sourceDirectoryAbsolutePath absoluteOutputPath = do
+  let
+    filePathRelative = makeRelative absoluteOutputPath fp
+    pathHackToLoadFrontMatter = sourceDirectoryAbsolutePath </> filePathRelative
   frontMatterContent <- loadFileContent pathHackToLoadFrontMatter
   isGophermapFlag <- isGophermapFile frontMatterContent
   if isGophermapFlag

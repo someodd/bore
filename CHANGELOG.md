@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+* Fix search result determination of item type
+
 ## [0.15.0.0] - 2024-10-22
 
 Phlogging!

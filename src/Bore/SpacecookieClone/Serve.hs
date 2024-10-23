@@ -58,8 +58,8 @@ boreConfigToConfig boreConfig absoluteOutputPath = do
         }
     }
 
-runServerWithConfig :: BoreConfig.ServerConfig -> AbsolutePath -> IO ()
-runServerWithConfig boreConfig absoluteOutputPath = do
+runServerWithConfig :: BoreConfig.ServerConfig -> AbsolutePath -> AbsolutePath -> IO ()
+runServerWithConfig boreConfig sourceDirectoryAbsolutePath absoluteOutputPath = do
   config <- boreConfigToConfig boreConfig absoluteOutputPath
   changeWorkingDirectory (rootDirectory config)
   (logHandler, logStopAction) <- fromMaybe (Nothing, pure ())
@@ -91,7 +91,7 @@ runServerWithConfig boreConfig absoluteOutputPath = do
       logStopAction
       systemdStoreOrClose s)
     cfg
-    (spacecookie logIO)
+    (spacecookie sourceDirectoryAbsolutePath absoluteOutputPath logIO)
 
 afterSocketSetup :: GopherLogHandler -> Config -> IO ()
 afterSocketSetup logIO cfg = do
@@ -136,8 +136,8 @@ noLog :: GopherLogHandler
 noLog = const . const $ pure ()
 
 -- Function to handle search functionality
-spacecookie :: GopherLogHandler -> GopherRequest -> IO GopherResponse
-spacecookie logger req = do
+spacecookie :: AbsolutePath -> AbsolutePath -> GopherLogHandler -> GopherRequest -> IO GopherResponse
+spacecookie sourceDirectoryAbsolutePath absoluteOutputPath logger req = do
   let selector = requestSelector req
       path = "." </> dropDrive (sanitizePath selector)
 
@@ -148,7 +148,7 @@ spacecookie logger req = do
       if "/search" == selector
         then do
           let query = T.strip $ decodeUtf8 searchString
-          getSearchResults query "."
+          getSearchResults query sourceDirectoryAbsolutePath absoluteOutputPath
         else do
           -- error, not supported endpoint
           pure $ ErrorResponse "You can only perform searches on /search"

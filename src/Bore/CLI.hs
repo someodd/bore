@@ -56,7 +56,7 @@ watchServe absoluteSourcePath absoluteOutputPath = do
     --changeWorkingDirectory projectRootPath
     library <- loadOnce absoluteSourcePath
     -- modify the config to use the output directory as the root. this could just be the config value if it was not overridden in the cli
-    runServerWithConfig library.config.server absoluteOutputPath
+    runServerWithConfig library.config.server absoluteSourcePath absoluteOutputPath
     forever $ threadDelay 1000000
 
 data Command = WatchServe (Maybe FilePath) (Maybe FilePath) | Build (Maybe FilePath) (Maybe FilePath)

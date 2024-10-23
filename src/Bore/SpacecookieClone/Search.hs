@@ -17,7 +17,7 @@ import Data.Text.Encoding qualified as E
 import Data.Text.IO qualified as TIO
 import Network.Gopher
 import System.Directory (doesDirectoryExist, listDirectory)
-import System.FilePath (takeExtension, (</>))
+import System.FilePath (takeExtension, (</>), makeRelative)
 import Text.EditDistance (defaultEditCosts, levenshteinDistance)
 
 -- | Define the size of the context window (number of words before and after)
@@ -158,14 +158,14 @@ addContext acc cs =
     else acc ++ [cs]
 
 -- | Function to process multiple documents
-searchDocuments :: [Text] -> IO [(FilePath, Bool, Int, [Text])]
-searchDocuments keywords = do
-  docPaths <- getTxtFiles "."
+searchDocuments :: [Text] -> AbsolutePath -> AbsolutePath -> IO [(FilePath, Bool, Int, [Text])]
+searchDocuments keywords sourceDirectoryAbsolutePath absoluteOutputPath = do
+  docPaths <- getTxtFiles absoluteOutputPath
   docs <-
     mapM
       ( \fp -> do
           content <- loadFileContent fp
-          (isMenu, hackedContent) <- gophermapHack fp content
+          (isMenu, hackedContent) <- gophermapHack fp content sourceDirectoryAbsolutePath
           pure (fp, isMenu, hackedContent)
       )
       docPaths
@@ -180,9 +180,9 @@ searchDocuments keywords = do
       docs
 
 -- | Check if a file is a gophermap. If it is, return the content without the gophermap syntax.
-gophermapHack :: FilePath -> Text -> IO (Bool, Text)
-gophermapHack fp content = do
-  let pathHackToLoadFrontMatter = ".." </> defaultSourceDirectoryName </> fp
+gophermapHack :: FilePath -> Text -> AbsolutePath -> IO (Bool, Text)
+gophermapHack fp content sourceDirectoryAbsolutePath = do
+  let pathHackToLoadFrontMatter = sourceDirectoryAbsolutePath </> fp
   frontMatterContent <- loadFileContent pathHackToLoadFrontMatter
   isGophermapFlag <- isGophermapFile frontMatterContent
   if isGophermapFlag
@@ -233,19 +233,19 @@ removeGophermapSyntax =
     . T.lines
 
 -- Main entrypoint. Should also have a prefix about search results when blank...
-getSearchResults :: Text -> FilePath -> IO GopherResponse
-getSearchResults query _ = do
-  documentResults <- searchDocuments (T.words query)
+getSearchResults :: Text -> AbsolutePath -> AbsolutePath -> IO GopherResponse
+getSearchResults query sourceDirectoryAbsolutePath absoluteOutputPath = do
+  documentResults <- searchDocuments (T.words query) sourceDirectoryAbsolutePath absoluteOutputPath
   let prunedResults = filter (\(_, _, s, _) -> s >= scoreThreshold) documentResults
-  pure $ searchResponse query $ L.sortOn (\(_, _, s, _) -> negate s) prunedResults
+  pure $ searchResponse absoluteOutputPath query $ L.sortOn (\(_, _, s, _) -> negate s) prunedResults
 
 makeInfoLine :: B.ByteString -> GopherMenuItem
 makeInfoLine t = Item InfoLine t "" Nothing Nothing
 
 -- Function to generate a GopherResponse for search results
-searchResponse :: Text -> [(FilePath, Bool, Int, [Text])] -> GopherResponse
-searchResponse query files =
-  let actualResults = concatMap makeSearchResult files
+searchResponse :: AbsolutePath -> Text -> [(FilePath, Bool, Int, [Text])] -> GopherResponse
+searchResponse absoluteOutputPath query files =
+  let actualResults = concatMap (makeSearchResult absoluteOutputPath) files
       preamble =
         Item
           InfoLine
@@ -256,10 +256,11 @@ searchResponse query files =
    in MenuResponse $ preamble : actualResults
 
 -- Build a search result for a file
-makeSearchResult :: (FilePath, Bool, Int, [Text]) -> [GopherMenuItem]
-makeSearchResult (selector, isMenu, _, contexts) =
+makeSearchResult :: AbsolutePath -> (FilePath, Bool, Int, [Text]) -> [GopherMenuItem]
+makeSearchResult absoluteOutputPath (fp, isMenu, _, contexts) =
   makeLink selector : map makeSummary contexts
   where
+    selector = makeRelative absoluteOutputPath fp
     makeSummary summary' = makeInfoLine $ E.encodeUtf8 summary'
     makeLink selector' =
       Item

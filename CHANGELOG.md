@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+* Search functionality now uses the correct paths for source and output directories
+
 ## [0.12.0.0] - 2024-10-22
 
 ### Added

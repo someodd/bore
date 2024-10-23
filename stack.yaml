@@ -45,7 +45,6 @@ extra-deps:
 - xml-conduit-writer-0.1.1.5@sha256:7b62f92e91d5f7c2c4440b2021d6b9309f9966598b110017b2cbcf3fcd1107df,1340
 - validation-selective-0.2.0.0@sha256:e1ab5482dede8bf676d729a09109c7c5f798363b9d458e4197a27afb8b48fdd3,3907
 - spacecookie-1.0.0.2@sha256:499ebafa27578efd9cd41e75731ed6fdefeec7d5f0b21a1f494d54481f2c5a22,4232
-- fuzzyfind-3.0.2@sha256:0fcd64eb1016fe0d0232abc26b2b80b32d676707ff41d155a28df8a9572603d4,1921
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

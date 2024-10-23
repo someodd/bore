@@ -21,6 +21,7 @@ import Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Text.IO as TextIO
 import System.FilePath ((</>), takeFileName, takeDirectory)
 import System.Directory (createDirectoryIfMissing)
+import Data.Ord (Down(..))
 
 {- | Determines if the frontmatter indicates a phlog post.
 
@@ -72,12 +73,11 @@ interpretDate text =
 defaultNullDate :: Text.Text
 defaultNullDate = "unknown"
 
-{- | Sort phlog posts by date.
-
--}
+-- | Sort phlog posts by date in descending (older as you go down/newest first) order.
 sortPhlogMetaByDate :: [PhlogMeta] -> [PhlogMeta]
 sortPhlogMetaByDate =
-    sortOn (\(_, _, frontMatter) -> interpretDate (fromMaybe defaultNullDate (frontMatter.date)))
+    sortOn (Down . (\(_, _, frontMatter) -> interpretDate (fromMaybe defaultNullDate (frontMatter.date))))
+
 
 {- | Extract the year from the frontmatter's date.
 
@@ -124,7 +124,7 @@ toPhlogLabel (_, relativePath, frontMatter) =
         date = fromMaybe "No date" frontMatter.date
         tags = Text.intercalate ", " (fromMaybe ["No tags"] (frontMatter.tags))
     in
-        title <> " - " <> date <> " - " <> tags <> " - " <> Text.pack relativePath
+        date <> " - " <> title <> " - " <> tags <> " - " <> Text.pack relativePath
 
 {- | Create a gopher link to a phlog post.
 

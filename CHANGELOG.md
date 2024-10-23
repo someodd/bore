@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+Phlogging!
+
+### Changed
+
+* Phlog post order on menu indexes is now descending (older as you go on)
+* Phlog post entries on menu indexes reformatted
+
 ## [0.14.0.0] - 2024-10-22
 
 ### Fixed

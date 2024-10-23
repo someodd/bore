@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+* (hopefully) enhanced file ranking algorithm for search
+
 ## [0.16.0.0] - 2024-10-23
 
 ### Fixed

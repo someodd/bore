@@ -8,6 +8,14 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Char (isPunctuation, isAlphaNum, isSpace, generalCategory, GeneralCategory(..))
 
+-- | Like words, except works not only on spaces, but also on underscores and hyphens.
+--
+-- Example:
+-- >>> splitWords "hello_world-foo bar"
+-- ["hello","world","foo","bar"]
+splitWords :: Text -> [Text]
+splitWords = T.split (\c -> c == ' ' || c == '_' || c == '-')
+
 -- | Remove repeating punctuation and keep only desired characters (letters, numbers, punctuation, and spaces).
 cleanText :: Text -> Text
 cleanText = removeRepeatingPunctuation . removeNonStandardChars

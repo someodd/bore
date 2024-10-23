@@ -1,6 +1,15 @@
--- TODO: BETTER DOCUMENT HOW SCORING WORKS AND EXPLAIN SCORES
-{-# LANGUAGE LambdaCase #-}
+{- | Text file search and rank functionality.
 
+Designed for use with the Bore SpacecookieClone, for the Gopher Protocol, in order to
+implement search.
+
+The terms "rank" and "score" are used interchangeably, but the `RankScore` is implemented
+as a float where higher is better. Various factors which go into the score can be
+manipuluated through the weights represented as constants in this module.
+
+Possible improvements include using FrontMatter in ranking.
+
+-}
 module Bore.SpacecookieClone.Search (getSearchResults) where
 
 import Bore.Text.Clean
@@ -20,13 +29,36 @@ import System.Directory (doesDirectoryExist, listDirectory)
 import System.FilePath (takeExtension, (</>), makeRelative)
 import Text.EditDistance (defaultEditCosts, levenshteinDistance)
 
+-- | The relevancy score of a document as it pertains to some set of keywords.
+type RankScore = Float
+
 -- | Define the size of the context window (number of words before and after)
 contextWindowSize :: Int
 contextWindowSize = 10
 
 -- | Minimum score to be included in the search results.
-scoreThreshold :: Int
+scoreThreshold :: Float
 scoreThreshold = 1
+
+-- | Weight constant for proximity ordered bonus.
+weightProximityOrdered :: Float
+weightProximityOrdered = 30
+
+-- | Weight constant for fuzzy match score.
+weightFuzzyMatch :: Float
+weightFuzzyMatch = 1.0
+
+-- | Weight constant for keyword frequency score.
+weightFrequency :: Float
+weightFrequency = 2.0
+
+-- | Weight for each exact match.
+weightExactMatch :: Float
+weightExactMatch = 2.0
+
+-- | Weight for keywords appearing in selector (path).
+weightSelector :: Float
+weightSelector = 50.0
 
 -- | Data structure to hold context snippet along with its start and end indices
 data ContextSnippet = ContextSnippet
@@ -39,16 +71,17 @@ data ContextSnippet = ContextSnippet
 -- | Score the text for how well it matches keywords and return the score along with
 -- snippets of where the matches were found.
 rankDocument
-    :: [Text]
+    :: FilePath
+    -- ^ The selector belonging to the document.
+    -> [Text]
     -- ^ Keywords to search for.
     -> Text
     -- ^ Document to rank/score.
-    -> (Int, [ContextSnippet])
+    -> (RankScore, [ContextSnippet])
     -- ^ The score along with the "contexts" where matches occur.
-rankDocument keywords content =
+rankDocument selector keywords content =
   let contentWords = T.words . toLower $ cleanText content
-      keywordMatches = findKeywordMatches keywords contentWords
-      totalScore = computeTotalScore keywords keywordMatches contentWords
+      (totalScore, keywordMatches) = computeTotalScore selector keywords contentWords
       contexts = extractKeywordContexts keywordMatches contentWords
   in (totalScore, contexts)
 
@@ -65,23 +98,82 @@ findKeywordMatches keywords contentWords = concatMap findMatchesForKeyword keywo
       in exactMatches ++ fuzzyMatches
 
 
--- | Compute total score based on proximity of different keyword matches
 -- | Compute total score based on proximity of different keyword matches and fuzzy matches
-computeTotalScore :: [Text] -> [(Text, Int)] -> [Text] -> Int
-computeTotalScore _ keywordMatches contentWords =
-  let proximityScore = keywordProximity keywordMatches
-      frequencyScore = 5 * sum (map (keywordFrequency contentWords . fst) keywordMatches)
-      fuzzyMatchScore = sum $ map (\(kw, _) -> if kw `elem` contentWords then 100 else fst (fuzzyMatch kw contentWords)) keywordMatches
-  in fuzzyMatchScore + proximityScore + frequencyScore
+--
+-- The total score is a combination of the following:
+--
+-- * Proximity score: The closer the keywords are to each other, the higher the score. A bonus for the same order, too.
+-- * Frequency score: The more a keyword appears in the content, the higher the score.
+-- * Fuzzy match score: The closer the fuzzy match is to the keyword, the higher the score.
+-- * Exact match score: The more exact matches, the higher the score.
+--
+-- Example:
+-- >>> tokens = T.words "Do you like tags? I like tags."
+-- >>> keywords = ["I", "like", "tags"]
+-- >>> fst $ computeTotalScore keywords tokens
+-- 300.0
+computeTotalScore :: FilePath -> [Text] -> [Text] -> (RankScore, [(Text, Int)])
+computeTotalScore selector keywords contentWords =
+  let
+    (keywordMatches, exactMatchScore) = computeExactMatchScore keywords contentWords
+    finalScore = sum
+      [ computeSelectorScore keywords selector
+      , keywordProximity keywordMatches
+      , computeFrequencyScore keywords contentWords
+      , computeFuzzyMatchScore keywords contentWords
+      , exactMatchScore
+      ]
+  in
+    (finalScore, keywordMatches)
 
--- | Calculate proximity score for different keywords based on their positions
-keywordProximity :: [(Text, Int)] -> Int
+-- | The score for keywords appearing in the selector (path).
+computeSelectorScore :: [Text] -> FilePath -> RankScore
+computeSelectorScore keywords selector =
+  let
+    selectorWords = splitWords . toLower $ cleanText (T.pack selector)
+    selectorMatches = findKeywordMatches keywords selectorWords
+    selectorScore = fromIntegral $ 10 * length selectorMatches
+  in
+    selectorScore * weightSelector
+
+computeExactMatchScore :: [Text] -> [Text] -> ([(Text, Int)], RankScore)
+computeExactMatchScore keywords contentWords =
+  let
+    keywordMatches = findKeywordMatches keywords contentWords
+    preliminaryScore = fromIntegral $ 10 * length keywordMatches
+  in
+    (keywordMatches, preliminaryScore * weightExactMatch)
+
+computeFrequencyScore :: [Text] -> [Text] -> RankScore
+computeFrequencyScore keywords contentWords =
+  let
+    preliminaryScore = fromIntegral $ 5 * sum (map (keywordFrequency contentWords) keywords)
+  in
+    preliminaryScore * weightFrequency
+
+computeFuzzyMatchScore :: [Text] -> [Text] -> RankScore
+computeFuzzyMatchScore keywords contentWords =
+  let
+    preliminaryScore = sum $ map (\kw -> if kw `elem` contentWords then 100 else fst (fuzzyMatch kw contentWords)) keywords
+  in
+    weightFuzzyMatch * preliminaryScore
+
+-- | Calculate proximity score for different keywords based on their positions. The closer
+-- the keywords are to each other, the higher the score. A significant bonus is applied for
+-- keywords appearing in the same order with small gaps.
+keywordProximity :: [(Text, Int)] -> RankScore
 keywordProximity keywordMatches =
   let positions = map snd keywordMatches
       -- Calculate proximity between different keywords
-      keywordPairs = [(i, j) | i <- positions, j <- positions, i < j]
+      keywordPairs = zip positions (tail positions)  -- Consecutive positions for order bonus
       distances = map (\(i, j) -> abs (i - j)) keywordPairs
-  in if null distances then 0 else max 0 (50 - minimum distances) -- Closer proximity scores higher
+      -- Apply bonus if keywords are in the same order and close proximity note this also
+      -- gives the same bonus for cases like searching for "hello world" and "hello hello
+      -- hello world"
+      orderBonus = (if all (uncurry (<)) keywordPairs then 30 else 0) * weightProximityOrdered
+  in if null distances
+     then 0
+     else max 0 (50 - fromIntegral (minimum distances)) + orderBonus -- Closer proximity scores higher, add order bonus
 
 -- | Count the number of times a keyword appears in the content
 keywordFrequency :: [Text] -> Text -> Int
@@ -101,13 +193,13 @@ fuzzyMatch
     -- ^ keyword to search for.
     -> [Text]
     -- ^ The words (tokens) to search in.
-    -> (Int, Int)
+    -> (RankScore, Int)
     -- ^ The score and the best match word index.
 fuzzyMatch keyword contentWords =
   let distances = zipWith (\i word -> (editDistance keyword word, i)) [0 ..] contentWords
       (minDistance, bestMatchIndex) = minimumBy (comparing fst) distances
       score = max 0 (100 - minDistance) -- Fuzzy score decreases with larger distance
-   in (score, bestMatchIndex)
+   in (fromIntegral score, bestMatchIndex)
 
 -- | Helper function to calculate Levenshtein distance using 'Text.EditDistance'
 editDistance :: Text -> Text -> Int
@@ -158,7 +250,7 @@ addContext acc cs =
     else acc ++ [cs]
 
 -- | Function to process multiple documents
-searchDocuments :: [Text] -> AbsolutePath -> AbsolutePath -> IO [(FilePath, Bool, Int, [Text])]
+searchDocuments :: [Text] -> AbsolutePath -> AbsolutePath -> IO [(FilePath, Bool, RankScore, [Text])]
 searchDocuments keywords sourceDirectoryAbsolutePath absoluteOutputPath = do
   docPaths <- getTxtFiles absoluteOutputPath
   docs <-
@@ -172,7 +264,8 @@ searchDocuments keywords sourceDirectoryAbsolutePath absoluteOutputPath = do
   return $
     map
       ( \(fp, isMenu, content) ->
-          let (score, contexts) = rankDocument keywords content
+          let relativePath = makeRelative absoluteOutputPath fp
+              (score, contexts) = rankDocument relativePath keywords content
               nonOverlappingContexts = combineContexts contexts
               contextTexts = map csText nonOverlappingContexts
            in (fp, isMenu, score, contextTexts)
@@ -245,7 +338,7 @@ makeInfoLine :: B.ByteString -> GopherMenuItem
 makeInfoLine t = Item InfoLine t "" Nothing Nothing
 
 -- Function to generate a GopherResponse for search results
-searchResponse :: AbsolutePath -> Text -> [(FilePath, Bool, Int, [Text])] -> GopherResponse
+searchResponse :: AbsolutePath -> Text -> [(FilePath, Bool, RankScore, [Text])] -> GopherResponse
 searchResponse absoluteOutputPath query files =
   let actualResults = concatMap (makeSearchResult absoluteOutputPath) files
       preamble =
@@ -258,7 +351,7 @@ searchResponse absoluteOutputPath query files =
    in MenuResponse $ preamble : actualResults
 
 -- Build a search result for a file
-makeSearchResult :: AbsolutePath -> (FilePath, Bool, Int, [Text]) -> [GopherMenuItem]
+makeSearchResult :: AbsolutePath -> (FilePath, Bool, RankScore, [Text]) -> [GopherMenuItem]
 makeSearchResult absoluteOutputPath (fp, isMenu, _, contexts) =
   makeLink selector : map makeSummary contexts
   where

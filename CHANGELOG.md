@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.16.0.0] - 2024-10-23
+
 ### Fixed
 
 * Fix search result determination of item type
@@ -120,7 +122,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.15.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.16.0.0...HEAD
+[0.16.0.0]: https://github.com/someodd/bore/compare/v0.15.0.0...v0.16.0.0
 [0.15.0.0]: https://github.com/someodd/bore/compare/v0.14.0.0...v0.15.0.0
 [0.14.0.0]: https://github.com/someodd/bore/compare/v0.13.0.0...v0.14.0.0
 [0.13.0.0]: https://github.com/someodd/bore/compare/v0.12.0.0...v0.13.0.0

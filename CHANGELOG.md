@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.13.0.0] - 2024-10-22
+
 ### Fixed
 
 * Search functionality now uses the correct paths for source and output directories
@@ -99,7 +101,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.12.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.13.0.0...HEAD
+[0.13.0.0]: https://github.com/someodd/bore/compare/v0.12.0.0...v0.13.0.0
 [0.12.0.0]: https://github.com/someodd/bore/compare/v0.11.0.0...v0.12.0.0
 [0.11.0.0]: https://github.com/someodd/bore/compare/v0.10.0.0...v0.11.0.0
 [0.10.0.0]: https://github.com/someodd/bore/compare/v0.9.0.0...v0.10.0.0

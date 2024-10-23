@@ -1,3 +1,5 @@
+-- TODO: Am I not stripping punctuation from keywords and tokens? That's a big deal. Also
+-- need to ensure a standard function for doing so like `searchableText`.
 {- | Text file search and rank functionality.
 
 Designed for use with the Bore SpacecookieClone, for the Gopher Protocol, in order to
@@ -34,19 +36,21 @@ type RankScore = Float
 
 -- | Define the size of the context window (number of words before and after)
 contextWindowSize :: Int
-contextWindowSize = 10
+contextWindowSize = 5
 
 -- | Minimum score to be included in the search results.
 scoreThreshold :: Float
-scoreThreshold = 1
+scoreThreshold = 200
 
 -- | Weight constant for proximity ordered bonus.
 weightProximityOrdered :: Float
-weightProximityOrdered = 30
+weightProximityOrdered = 100
 
 -- | Weight constant for fuzzy match score.
+--
+-- This weighs against the average percentage of best likeness of all keywords.
 weightFuzzyMatch :: Float
-weightFuzzyMatch = 1.0
+weightFuzzyMatch = 0.1
 
 -- | Weight constant for keyword frequency score.
 weightFrequency :: Float
@@ -56,9 +60,13 @@ weightFrequency = 2.0
 weightExactMatch :: Float
 weightExactMatch = 2.0
 
--- | Weight for keywords appearing in selector (path).
-weightSelector :: Float
-weightSelector = 50.0
+-- | Weight for keywords exactly appearing in selector (path).
+weightSelectorExact :: Float
+weightSelectorExact = 100.0
+
+-- | Weight for keywords fuzzy appearing in selector (path).
+weightSelectorFuzzy :: Float
+weightSelectorFuzzy = 1.0
 
 -- | Data structure to hold context snippet along with its start and end indices
 data ContextSnippet = ContextSnippet
@@ -85,17 +93,22 @@ rankDocument selector keywords content =
       contexts = extractKeywordContexts keywordMatches contentWords
   in (totalScore, contexts)
 
--- TODO: what about fuzzy matches? Otherwise won't get contexts for fuzzy match.
 -- | Find all keyword *exact* matches in the document and their positions
--- | Find all keyword matches (both exact and fuzzy) in the document and their positions
-findKeywordMatches :: [Text] -> [Text] -> [(Text, Int)]
+-- | Find keyword matches (both exact and fuzzy) in the document and their positions.
+--
+-- Finds all exact matches, but if there are none, try to find the best fuzzy match.
+findKeywordMatches
+  :: [Text]
+  -> [Text]
+  -> [(Text, Int, Float)]
+  -- ^ The Float is the percentage likeness of the fuzzy match. For exact match it's 100.
 findKeywordMatches keywords contentWords = concatMap findMatchesForKeyword keywords
   where
-    findMatchesForKeyword :: Text -> [(Text, Int)]
+    findMatchesForKeyword :: Text -> [(Text, Int, Float)]
     findMatchesForKeyword keyword =
-      let exactMatches = [(keyword, idx) | idx <- findIndices (== keyword) contentWords]
-          fuzzyMatches = [(keyword, idx) | (_, idx) <- map (fuzzyMatch keyword) [contentWords]]
-      in exactMatches ++ fuzzyMatches
+      case [(keyword, idx, 100) | idx <- findIndices (== keyword) contentWords] of
+        [] -> [let (likeness, idx) = bestFuzzyMatch keyword contentWords in (keyword, idx, likeness)]
+        exactMatches -> exactMatches
 
 
 -- | Compute total score based on proximity of different keyword matches and fuzzy matches
@@ -115,34 +128,39 @@ findKeywordMatches keywords contentWords = concatMap findMatchesForKeyword keywo
 computeTotalScore :: FilePath -> [Text] -> [Text] -> (RankScore, [(Text, Int)])
 computeTotalScore selector keywords contentWords =
   let
-    (keywordMatches, exactMatchScore) = computeExactMatchScore keywords contentWords
+    (keywordMatches, exactMatchScore) = computeMatchScore keywords contentWords
     finalScore = sum
       [ computeSelectorScore keywords selector
       , keywordProximity keywordMatches
       , computeFrequencyScore keywords contentWords
-      , computeFuzzyMatchScore keywords contentWords
+      --, computeFuzzyMatchScore keywords contentWords
       , exactMatchScore
       ]
   in
     (finalScore, keywordMatches)
 
--- | The score for keywords appearing in the selector (path).
+-- | The score for keywords (fuzzy) appearing in the selector (path).
+--
+-- Currently has no weighted difference between exact and fuzzy matches. I think this is
+-- fine since only one fuzzy match (the best) ever gets considered.
 computeSelectorScore :: [Text] -> FilePath -> RankScore
 computeSelectorScore keywords selector =
   let
     selectorWords = splitWords . toLower $ cleanText (T.pack selector)
-    selectorMatches = findKeywordMatches keywords selectorWords
-    selectorScore = fromIntegral $ 10 * length selectorMatches
+    likenessSum = sum [if likeness == 100 then likeness * weightSelectorExact else likeness * weightSelectorFuzzy | (_, _, likeness) <- findKeywordMatches keywords selectorWords]
   in
-    selectorScore * weightSelector
+    likenessSum
 
-computeExactMatchScore :: [Text] -> [Text] -> ([(Text, Int)], RankScore)
-computeExactMatchScore keywords contentWords =
+-- Change this to do the fuzzy match and just do it off the batt and give bonus for 100% match.
+computeMatchScore :: [Text] -> [Text] -> ([(Text, Int)], RankScore)
+computeMatchScore keywords contentWords =
   let
     keywordMatches = findKeywordMatches keywords contentWords
-    preliminaryScore = fromIntegral $ 10 * length keywordMatches
+    keywordMatchesBonus = [if likeness == 100 then likeness * weightExactMatch else likeness * weightFuzzyMatch | (_, _, likeness) <- keywordMatches]
+    score = sum keywordMatchesBonus
+    matchIndexes = [(t, indx) | (t, indx, _) <- keywordMatches]
   in
-    (keywordMatches, preliminaryScore * weightExactMatch)
+    (matchIndexes, score)
 
 computeFrequencyScore :: [Text] -> [Text] -> RankScore
 computeFrequencyScore keywords contentWords =
@@ -150,13 +168,6 @@ computeFrequencyScore keywords contentWords =
     preliminaryScore = fromIntegral $ 5 * sum (map (keywordFrequency contentWords) keywords)
   in
     preliminaryScore * weightFrequency
-
-computeFuzzyMatchScore :: [Text] -> [Text] -> RankScore
-computeFuzzyMatchScore keywords contentWords =
-  let
-    preliminaryScore = sum $ map (\kw -> if kw `elem` contentWords then 100 else fst (fuzzyMatch kw contentWords)) keywords
-  in
-    weightFuzzyMatch * preliminaryScore
 
 -- | Calculate proximity score for different keywords based on their positions. The closer
 -- the keywords are to each other, the higher the score. A significant bonus is applied for
@@ -170,7 +181,10 @@ keywordProximity keywordMatches =
       -- Apply bonus if keywords are in the same order and close proximity note this also
       -- gives the same bonus for cases like searching for "hello world" and "hello hello
       -- hello world"
-      orderBonus = (if all (uncurry (<)) keywordPairs then 30 else 0) * weightProximityOrdered
+      orderBonus =
+        if length keywordPairs > 1
+          then (if all (uncurry (<)) keywordPairs then 1 else 0) * weightProximityOrdered
+          else 0
   in if null distances
      then 0
      else max 0 (50 - fromIntegral (minimum distances)) + orderBonus -- Closer proximity scores higher, add order bonus
@@ -180,28 +194,32 @@ keywordFrequency :: [Text] -> Text -> Int
 keywordFrequency contentWords keyword =
   length $ filter (== keyword) contentWords
 
--- | Calculate fuzzy match score and get index of best match
+-- TODO: doesn't seem very forgiving to small word typos
+-- | Calculate percentage likeness and index of the *best* (fuzzy) match.
 --
--- Highest potential score is 100. Pointss deducted for difference between the best match
--- and the keyword.
+-- Highest potential score is 100. As in 100% similarity.
 --
 -- Example:
--- >>> fuzzyMatch "togs" ["do", "you", "like", "tags?"]
--- (98,3)
-fuzzyMatch
+-- >>> bestFuzzyMatch "togs" ["do", "you", "like", "tags?"]
+-- (60.0,3)
+bestFuzzyMatch
     :: Text
-    -- ^ keyword to search for.
+    -- ^ Keyword to search for.
     -> [Text]
     -- ^ The words (tokens) to search in.
-    -> (RankScore, Int)
-    -- ^ The score and the best match word index.
-fuzzyMatch keyword contentWords =
+    -> (Float, Int)
+    -- ^ Best likeness percentage and index where it was found.
+bestFuzzyMatch keyword contentWords =
   let distances = zipWith (\i word -> (editDistance keyword word, i)) [0 ..] contentWords
       (minDistance, bestMatchIndex) = minimumBy (comparing fst) distances
-      score = max 0 (100 - minDistance) -- Fuzzy score decreases with larger distance
-   in (fromIntegral score, bestMatchIndex)
+      maxPossibleDistance = max (T.length keyword) (T.length (contentWords !! bestMatchIndex)) -- maximum distance based on word lengths; also unsafe function
+      likenessPercentage = max 0 (100 - (fromIntegral minDistance / fromIntegral maxPossibleDistance) * 100) -- Normalize distance to 100 scale
+   in (likenessPercentage, bestMatchIndex)
 
 -- | Helper function to calculate Levenshtein distance using 'Text.EditDistance'
+--
+-- The distance returned will be between 0 (exact match) and the length of the longest
+-- of the two words compared.
 editDistance :: Text -> Text -> Int
 editDistance keyword word =
   levenshteinDistance defaultEditCosts (unpack keyword) (unpack word)
@@ -352,11 +370,12 @@ searchResponse absoluteOutputPath query files =
 
 -- Build a search result for a file
 makeSearchResult :: AbsolutePath -> (FilePath, Bool, RankScore, [Text]) -> [GopherMenuItem]
-makeSearchResult absoluteOutputPath (fp, isMenu, _, contexts) =
-  makeLink selector : map makeSummary contexts
+makeSearchResult absoluteOutputPath (fp, isMenu, score, contexts) =
+  makeLink selector : scoreLine : [makeSummary (T.intercalate " ... " contexts)]
   where
     selector = "/" </> makeRelative absoluteOutputPath fp
-    makeSummary summary' = makeInfoLine $ E.encodeUtf8 summary'
+    scoreLine = makeInfoLine $ E.encodeUtf8 $ "Score: " <> T.pack (show score)
+    makeSummary summary' = makeInfoLine $ E.encodeUtf8 $ summary'
     makeLink selector' =
       Item
         (if isMenu then Directory else File)

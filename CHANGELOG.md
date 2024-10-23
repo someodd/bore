@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+* Search results/file ranking algorithm should hopefully be *way* better now
+
 ## [0.17.0.0] - 2024-10-23
 
 ### Changed

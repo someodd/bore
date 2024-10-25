@@ -7,15 +7,23 @@ Also includes tools for dealing with file paths and dealing with the file system
 rudimentary file operations that are only specific to project layout, in other words, do
 things according to project layout rules, and nothing more specific.
 
+Also handles some things to do with Gopher selectors.
+
 -}
 
 module Bore.FileLayout where
 
 import Control.Monad (filterM, when, forM_)
 import System.Directory (listDirectory, doesDirectoryExist, copyFile, createDirectoryIfMissing, canonicalizePath, removeDirectoryRecursive, removeFile)
-import System.FilePath ((</>), makeRelative, takeFileName, takeDirectory)
+import System.FilePath ((</>), makeRelative, takeFileName, takeDirectory, isValid, isRelative, dropExtension)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as TextIO
+import Data.List (sortOn)
+import Data.Ord (Down(..))
+import Bore.Text.Clean (cleanText)
+import Data.Text.Encoding (encodeUtf8)
+import qualified Data.ByteString as B
+import qualified Data.Text as T
 
 {- | Directory which "gets left alone" during the build process, i.e., it won't get
 cleared out of output.
@@ -245,3 +253,69 @@ resetOutputDirectory outputDir = do
             if isDir
                 then removeDirectoryRecursive itemPath
                 else removeFile itemPath
+
+-- | Check if what's supposed to be a filename is safe and sane.
+--
+-- Example:
+-- >>> isSafeFilename "file.txt"
+-- True
+-- >>> isSafeFilename "../file.txt"
+-- False
+-- >>> isSafeFilename "file.txt/"
+-- False
+-- >>> isSafeFilename "file.txt/.."
+-- False
+-- >>> isSafeFilename "."
+-- False
+-- >>> isSafeFilename "/dir/file.txt"
+-- False
+-- >>> isSafeFilename "file"
+-- True
+isSafeFilename :: FilePath -> Bool
+isSafeFilename name =
+    isValid name              -- Checks if it contains only valid characters
+        && not (null name)        -- Ensures it’s not empty
+        && not (null $ takeFileName name)  -- Ensures it’s not just a directory
+        && takeFileName name == name -- ensure it doesn't have a directory traversal
+        && isRelative name     -- Ensures it's a relative path
+        && name /= "." && name /= ".."  -- Disallows "." and ".."
+        && filenameByteLength name <= 255  -- Ensures it's not too long
+
+-- | Get the words/tokens from a selector, and normalize them.
+--
+-- Example:
+-- >>> selectorWords "hello_world-foo bar"
+-- ["hello","world","foo","bar"]
+selectorWords :: FilePath -> [Text.Text]
+selectorWords = pathWords . Text.toLower . cleanText . Text.pack
+
+-- | Get the byte length of a filename in UTF-8 encoding
+filenameByteLength :: String -> Int
+filenameByteLength filename = B.length . encodeUtf8 $ T.pack filename
+
+-- | Get the words/tokens from a path.
+--
+-- Also enforces a maximum length.
+--
+-- Differs from `selectorWords` in that it's not focused on cleaning the text of any
+-- ineappropriate characters.
+--
+-- Example:
+-- >>> pathWords "hello_world-foo bar"
+-- ["hello","world","foo","bar"]
+-- >>> pathWords "hello/word/foo.gopher.txt"
+-- ["hello","word","foo"]
+pathWords :: Text.Text -> [Text.Text]
+pathWords = Text.split (`elem` splitChars) . dropExtensionSpecial
+  where
+    splitChars = [' ', '_', '-', '.', '/']
+    sortedExtensions = sortOn (Down . Text.length) (map Text.pack onlyParse)
+    -- Drop the onlyParse extensions if it exists, otherwise just use dropExtension from FilePath
+    dropExtensionSpecial :: Text.Text -> Text.Text
+    dropExtensionSpecial fp = 
+        let
+          fpNoExt = dropExtension (Text.unpack fp)  -- Remove last extension if no specific match
+        in
+          case filter (`Text.isSuffixOf` fp) sortedExtensions of
+            (ext:_) -> Text.dropEnd (Text.length ext) fp
+            []      -> Text.pack fpNoExt

@@ -1,5 +1,6 @@
 -- TODO: Am I not stripping punctuation from keywords and tokens? That's a big deal. Also
 -- need to ensure a standard function for doing so like `searchableText`.
+-- TODO: improvements: exclude words like and, is, etc.
 {- | Text file search and rank functionality.
 
 Designed for use with the Bore SpacecookieClone, for the Gopher Protocol, in order to
@@ -34,6 +35,16 @@ import Text.EditDistance (defaultEditCosts, levenshteinDistance)
 -- | The relevancy score of a document as it pertains to some set of keywords.
 type RankScore = Float
 
+-- | The minimum length of a keyword to be considered for fuzzy matching. This is very
+-- English-centric. For example, this would be foolish for Chinese, although it could use
+-- pinyin, romanization of various logographic languages or whatever.
+minFuzzyKeywordLength :: Int
+minFuzzyKeywordLength = 4
+
+-- | The minimum likeness percentage for a fuzzy match to be considered.
+minimumFuzzyLikeness :: Float
+minimumFuzzyLikeness = 75
+
 -- | Define the size of the context window (number of words before and after)
 contextWindowSize :: Int
 contextWindowSize = 5
@@ -42,9 +53,9 @@ contextWindowSize = 5
 scoreThreshold :: Float
 scoreThreshold = 200
 
--- | Weight constant for proximity ordered bonus.
-weightProximityOrdered :: Float
-weightProximityOrdered = 100
+-- | Weight constant for ordered proximity bonus
+weightOrderedProximity :: Float
+weightOrderedProximity = 1000
 
 -- | Weight constant for fuzzy match score.
 --
@@ -58,7 +69,7 @@ weightFrequency = 2.0
 
 -- | Weight for each exact match.
 weightExactMatch :: Float
-weightExactMatch = 2.0
+weightExactMatch = 10.0
 
 -- | Weight for keywords exactly appearing in selector (path).
 weightSelectorExact :: Float
@@ -66,7 +77,7 @@ weightSelectorExact = 100.0
 
 -- | Weight for keywords fuzzy appearing in selector (path).
 weightSelectorFuzzy :: Float
-weightSelectorFuzzy = 1.0
+weightSelectorFuzzy = weightFuzzyMatch
 
 -- | Data structure to hold context snippet along with its start and end indices
 data ContextSnippet = ContextSnippet
@@ -85,18 +96,20 @@ rankDocument
     -- ^ Keywords to search for.
     -> Text
     -- ^ Document to rank/score.
-    -> (RankScore, [ContextSnippet])
-    -- ^ The score along with the "contexts" where matches occur.
+    -> (String, RankScore, [ContextSnippet])
+    -- ^ The highlighted selector, the score, and the "contexts" where matches occur (in the body).
 rankDocument selector keywords content =
   let contentWords = T.words . toLower $ cleanText content
-      (totalScore, keywordMatches) = computeTotalScore selector keywords contentWords
+      (highlightedSelector, totalScore, keywordMatches) = computeTotalScore selector keywords contentWords
       contexts = extractKeywordContexts keywordMatches contentWords
-  in (totalScore, contexts)
+  in (highlightedSelector, totalScore, contexts)
 
 -- | Find all keyword *exact* matches in the document and their positions
 -- | Find keyword matches (both exact and fuzzy) in the document and their positions.
 --
 -- Finds all exact matches, but if there are none, try to find the best fuzzy match.
+--
+-- Will skip fuzzy matches if the keyword is too short.
 findKeywordMatches
   :: [Text]
   -> [Text]
@@ -107,7 +120,14 @@ findKeywordMatches keywords contentWords = concatMap findMatchesForKeyword keywo
     findMatchesForKeyword :: Text -> [(Text, Int, Float)]
     findMatchesForKeyword keyword =
       case [(keyword, idx, 100) | idx <- findIndices (== keyword) contentWords] of
-        [] -> [let (likeness, idx) = bestFuzzyMatch keyword contentWords in (keyword, idx, likeness)]
+        [] ->
+          if T.length keyword >= minFuzzyKeywordLength
+            then
+              filter (\(_, _, likeness) -> likeness >= minimumFuzzyLikeness)
+                [ let (likeness, idx) = bestFuzzyMatch keyword contentWords in (keyword, idx, likeness)
+                ]
+            else
+              []
         exactMatches -> exactMatches
 
 
@@ -125,31 +145,65 @@ findKeywordMatches keywords contentWords = concatMap findMatchesForKeyword keywo
 -- >>> keywords = ["I", "like", "tags"]
 -- >>> fst $ computeTotalScore keywords tokens
 -- 300.0
-computeTotalScore :: FilePath -> [Text] -> [Text] -> (RankScore, [(Text, Int)])
+computeTotalScore
+  :: FilePath
+  -> [Text]
+  -> [Text]
+  -> (String, RankScore, [(Text, Int)])
+  -- ^ The new selector with matches highlighted, the final score, and the keyword matches (with their indexes).
 computeTotalScore selector keywords contentWords =
   let
     (keywordMatches, exactMatchScore) = computeMatchScore keywords contentWords
+    (selectorHighlighted, selectorScore) = computeSelectorScore keywords selector
     finalScore = sum
-      [ computeSelectorScore keywords selector
-      , keywordProximity keywordMatches
+      [ selectorScore
+      , keywordOrderedProximity keywordMatches
       , computeFrequencyScore keywords contentWords
       --, computeFuzzyMatchScore keywords contentWords
       , exactMatchScore
       ]
   in
-    (finalScore, keywordMatches)
+    (selectorHighlighted, finalScore, keywordMatches)
 
 -- | The score for keywords (fuzzy) appearing in the selector (path).
 --
 -- Currently has no weighted difference between exact and fuzzy matches. I think this is
 -- fine since only one fuzzy match (the best) ever gets considered.
-computeSelectorScore :: [Text] -> FilePath -> RankScore
+--
+-- Example:
+-- >>> computeSelectorScore ["hello", "world"] "test/this/hello_world-foo bar.foo"
+-- 20000.0
+--- >>> computeSelectorScore ["gopher"] "test/this/hello_world-foo bar.gopher.txt"
+-- 16.666672
+--- >>> computeSelectorScore ["gopher"] "test/this/hello_gopher-foo bar.gopher.txt"
+-- 10000.0
+-- >>> computeSelectorScore ["world"] "hello/world/foo.txt"
+-- 10000.0
+computeSelectorScore
+  :: [Text]
+  -> FilePath
+  -> (String, RankScore)
+  -- ^ The new selector with matches highlighted and the score.
 computeSelectorScore keywords selector =
   let
-    selectorWords = splitWords . toLower $ cleanText (T.pack selector)
-    likenessSum = sum [if likeness == 100 then likeness * weightSelectorExact else likeness * weightSelectorFuzzy | (_, _, likeness) <- findKeywordMatches keywords selectorWords]
+    selectorWords' = selectorWords selector
+    wordLikeness =
+      [ (word, indx, if likeness == 100 then likeness * weightSelectorExact else likeness * weightSelectorFuzzy)
+      | (word, indx, likeness) <- findKeywordMatches keywords selectorWords'
+      ]
+    likenessSum = sum $ map (\(_, _, likeness) -> likeness) wordLikeness
+    -- Highlight matches directly within `selector` using start positions
+    highlightedSelector = 
+      foldr
+        (\(word, indx, _) acc ->
+            let (prefix, rest) = splitAt (T.length (T.unwords $ take indx selectorWords')) acc
+                (toHighlight, suffix) = splitAt (T.length word) rest
+            in prefix <> "[" <> toHighlight <> "]" <> suffix
+        )
+        selector
+        wordLikeness
   in
-    likenessSum
+    (highlightedSelector, likenessSum)
 
 -- Change this to do the fuzzy match and just do it off the batt and give bonus for 100% match.
 computeMatchScore :: [Text] -> [Text] -> ([(Text, Int)], RankScore)
@@ -172,22 +226,27 @@ computeFrequencyScore keywords contentWords =
 -- | Calculate proximity score for different keywords based on their positions. The closer
 -- the keywords are to each other, the higher the score. A significant bonus is applied for
 -- keywords appearing in the same order with small gaps.
-keywordProximity :: [(Text, Int)] -> RankScore
-keywordProximity keywordMatches =
+--
+-- Assumes @@keywordMatches@@ is supplied in the order keywords were given.
+--
+-- Example:
+-- >>> keywordOrderedProximity [("hello", 0), ("world", 2), ("foo", 5)]
+-- 28.57143
+keywordOrderedProximity :: [(Text, Int)] -> RankScore
+keywordOrderedProximity keywordMatches =
   let positions = map snd keywordMatches
       -- Calculate proximity between different keywords
       keywordPairs = zip positions (tail positions)  -- Consecutive positions for order bonus
+      -- Will naturally be the distance between the keywords in the order they were given.
       distances = map (\(i, j) -> abs (i - j)) keywordPairs
-      -- Apply bonus if keywords are in the same order and close proximity note this also
-      -- gives the same bonus for cases like searching for "hello world" and "hello hello
-      -- hello world"
-      orderBonus =
-        if length keywordPairs > 1
-          then (if all (uncurry (<)) keywordPairs then 1 else 0) * weightProximityOrdered
-          else 0
-  in if null distances
-     then 0
-     else max 0 (50 - fromIntegral (minimum distances)) + orderBonus -- Closer proximity scores higher, add order bonus
+      -- Calculate the average distance if there are distances available.
+      avgDistanceBonus =
+        if length keywordMatches <= 1
+          then 0
+          else
+            let average = fromIntegral (sum distances) / fromIntegral (length distances)
+            in (1 / (average + 1))
+  in avgDistanceBonus * weightOrderedProximity
 
 -- | Count the number of times a keyword appears in the content
 keywordFrequency :: [Text] -> Text -> Int
@@ -268,7 +327,12 @@ addContext acc cs =
     else acc ++ [cs]
 
 -- | Function to process multiple documents
-searchDocuments :: [Text] -> AbsolutePath -> AbsolutePath -> IO [(FilePath, Bool, RankScore, [Text])]
+searchDocuments
+  :: [Text]
+  -> AbsolutePath
+  -> AbsolutePath
+  -> IO [(FilePath, String, Bool, RankScore, [Text])]
+  -- ^ The file path, the highlighted selector, whether it's a menu, the score, and the context snippets.
 searchDocuments keywords sourceDirectoryAbsolutePath absoluteOutputPath = do
   docPaths <- getTxtFiles absoluteOutputPath
   docs <-
@@ -283,10 +347,10 @@ searchDocuments keywords sourceDirectoryAbsolutePath absoluteOutputPath = do
     map
       ( \(fp, isMenu, content) ->
           let relativePath = makeRelative absoluteOutputPath fp
-              (score, contexts) = rankDocument relativePath keywords content
+              (highlightedSelector, score, contexts) = rankDocument relativePath keywords content
               nonOverlappingContexts = combineContexts contexts
               contextTexts = map csText nonOverlappingContexts
-           in (fp, isMenu, score, contextTexts)
+           in (fp, highlightedSelector, isMenu, score, contextTexts)
       )
       docs
 
@@ -349,14 +413,19 @@ removeGophermapSyntax =
 getSearchResults :: Text -> AbsolutePath -> AbsolutePath -> IO GopherResponse
 getSearchResults query sourceDirectoryAbsolutePath absoluteOutputPath = do
   documentResults <- searchDocuments (T.words query) sourceDirectoryAbsolutePath absoluteOutputPath
-  let prunedResults = filter (\(_, _, s, _) -> s >= scoreThreshold) documentResults
-  pure $ searchResponse absoluteOutputPath query $ L.sortOn (\(_, _, s, _) -> negate s) prunedResults
+  let prunedResults = filter (\(_, _,  _, s, _) -> s >= scoreThreshold) documentResults
+  pure $ searchResponse absoluteOutputPath query $ L.sortOn (\(_, _, _, s, _) -> negate s) prunedResults
 
 makeInfoLine :: B.ByteString -> GopherMenuItem
 makeInfoLine t = Item InfoLine t "" Nothing Nothing
 
 -- Function to generate a GopherResponse for search results
-searchResponse :: AbsolutePath -> Text -> [(FilePath, Bool, RankScore, [Text])] -> GopherResponse
+searchResponse
+  :: AbsolutePath
+  -> Text
+  -> [(FilePath, String, Bool, RankScore, [Text])]
+  -- ^ The selector (?) or filepath (?), the highlighted selector, whether it's a menu, the score, and the context snippets.
+  -> GopherResponse
 searchResponse absoluteOutputPath query files =
   let actualResults = concatMap (makeSearchResult absoluteOutputPath) files
       preamble =
@@ -369,8 +438,12 @@ searchResponse absoluteOutputPath query files =
    in MenuResponse $ preamble : actualResults
 
 -- Build a search result for a file
-makeSearchResult :: AbsolutePath -> (FilePath, Bool, RankScore, [Text]) -> [GopherMenuItem]
-makeSearchResult absoluteOutputPath (fp, isMenu, score, contexts) =
+makeSearchResult
+  :: AbsolutePath
+  -> (FilePath, String, Bool, RankScore, [Text])
+  -- ^ The selector (?) or filepath (?), the highlighted selector, whether it's a menu, the score, and the context snippets.
+  -> [GopherMenuItem]
+makeSearchResult absoluteOutputPath (fp, highlightedSelector, isMenu, score, contexts) =
   makeLink selector : scoreLine : [makeSummary (T.intercalate " ... " contexts)]
   where
     selector = "/" </> makeRelative absoluteOutputPath fp
@@ -379,7 +452,7 @@ makeSearchResult absoluteOutputPath (fp, isMenu, score, contexts) =
     makeLink selector' =
       Item
         (if isMenu then Directory else File)
-        (C8.pack selector')
+        (C8.pack highlightedSelector)
         (C8.pack selector')
         Nothing
         Nothing

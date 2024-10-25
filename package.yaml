@@ -92,3 +92,16 @@ executables:
       - DeriveAnyClass
       - OverloadedRecordDot
     default-language: GHC2021
+
+tests:
+  bore-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+    build-depends:
+      - bore
+      - QuickCheck
+      - text
+      - temporary
+      - doctest
+    default-language:    GHC2021

@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           bore
-version:        0.17.0.0
+version:        0.18.0.0
 synopsis:       Build gopherholes.
 description:    Static site builder, but for gopherholes. Manage phlogs with tags, use the Markdown renderer and Mustache templating system.
 category:       Network
@@ -144,6 +144,63 @@ executable bore
     , spacecookie
     , split
     , systemd
+    , text
+    , time
+    , tomland
+    , unix
+    , unordered-containers
+    , vector
+    , word-wrap
+    , xml-conduit
+    , xml-conduit-writer
+    , yaml
+  default-language: GHC2021
+
+test-suite bore-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_bore
+  autogen-modules:
+      Paths_bore
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Werror -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      QuickCheck
+    , aeson
+    , attoparsec
+    , base
+    , bore
+    , bytestring
+    , commonmark
+    , containers
+    , data-default
+    , directory
+    , doctest
+    , edit-distance
+    , fast-logger
+    , filepath
+    , filepath-bytestring
+    , filepattern
+    , frontmatter
+    , fsnotify
+    , fuzzy-dates
+    , hashable
+    , hashmap
+    , hourglass
+    , mtl
+    , mustache
+    , neat-interpolation
+    , network-uri
+    , optparse-applicative
+    , parsec
+    , raw-strings-qq
+    , socket
+    , spacecookie
+    , split
+    , systemd
+    , temporary
     , text
     , time
     , tomland

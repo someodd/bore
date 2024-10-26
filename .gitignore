@@ -9,3 +9,4 @@ result
 bin/
 *.deb
 docker/id_rsa.pub
+**/.liquid/

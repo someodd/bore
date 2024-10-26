@@ -1,5 +1,11 @@
 # Contributing
 
+## LiquidHaskell
+
+`stack install ghcid`
+
+`ghcid` (wait), should default to stack.
+
 ## Releases
 
 Releases are managed through GitHub Actions. Please see `.github/workflows/release.yml`.

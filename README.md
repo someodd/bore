@@ -8,6 +8,10 @@ It comes with its own Gopher Protocol server (ripped from [spacecookie](https://
 
 In use on gopher://gopher.someodd.zip/
 
+## Installing
+
+There are packages in [the release section of the Github repository](https://github.com/someodd/bore/releases)
+
 ## Features
 
 Here are some features, but I recommend checking out `example/` for an example gopherhole:
@@ -16,7 +20,7 @@ Here are some features, but I recommend checking out `example/` for an example g
 * Bundled with a Gopher Protocol server
 * FrontMatter support, you can choose if something is to become a gophermap/menu (you can even use the [.gophermap standard](https://sternenseemann.github.io/spacecookie/spacecookie.gophermap.5.html) for writing those!)
 * Phlogging (blogging) support, with a generated Atom feed and tag and main indexes
-* Search support, search all your `.txt` files with a file ranking algorithm (search on `/search`)
+* Search support, search all your `.txt` files with a file ranking algorithm (search on `/search`) -- partially formally verified and results get property tested!
 
 ## Quickstart
 

@@ -13,7 +13,7 @@ category: Network
 extra-source-files:
   - README.md
   - CHANGELOG.md
-tested-with: GHC==9.6.6
+tested-with: GHC==9.6.3
 
 ghc-options:
   - -threaded
@@ -28,6 +28,7 @@ dependencies:
   - filepath-bytestring
   - socket
   - systemd
+  - liquidhaskell
   - unix
   - fast-logger
   - fsnotify

@@ -13,79 +13,25 @@ manipuluated through the weights represented as constants in this module.
 Possible improvements include using FrontMatter in ranking.
 
 -}
-module Bore.SpacecookieClone.Search (getSearchResults) where
+module Bore.SpacecookieClone.Search.Search (getSearchResults) where
 
 import Bore.Text.Clean
 import Bore.FileLayout
-import Bore.FrontMatter
+import Bore.FrontMatter ( isGophermap, parseFrontMatter )
+import Bore.SpacecookieClone.Search.Verified
+import Bore.SpacecookieClone.Search.WeightsTypes
+
 import Data.ByteString qualified as B
 import Data.ByteString.Char8 qualified as C8
-import Data.List (findIndices, foldl', minimumBy)
+import Data.List (findIndices, foldl')
 import Data.List qualified as L
-import Data.Ord (comparing)
-import Data.Text (Text, toLower, unpack)
+import Data.Text (Text, toLower)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as E
 import Data.Text.IO qualified as TIO
 import Network.Gopher
 import System.Directory (doesDirectoryExist, listDirectory)
 import System.FilePath (takeExtension, (</>), makeRelative)
-import Text.EditDistance (defaultEditCosts, levenshteinDistance)
-
--- | The relevancy score of a document as it pertains to some set of keywords.
-type RankScore = Float
-
--- | The minimum length of a keyword to be considered for fuzzy matching. This is very
--- English-centric. For example, this would be foolish for Chinese, although it could use
--- pinyin, romanization of various logographic languages or whatever.
-minFuzzyKeywordLength :: Int
-minFuzzyKeywordLength = 4
-
--- | The minimum likeness percentage for a fuzzy match to be considered.
-minimumFuzzyLikeness :: Float
-minimumFuzzyLikeness = 75
-
--- | Define the size of the context window (number of words before and after)
-contextWindowSize :: Int
-contextWindowSize = 5
-
--- | Minimum score to be included in the search results.
-scoreThreshold :: Float
-scoreThreshold = 200
-
--- | Weight constant for ordered proximity bonus
-weightOrderedProximity :: Float
-weightOrderedProximity = 1000
-
--- | Weight constant for fuzzy match score.
---
--- This weighs against the average percentage of best likeness of all keywords.
-weightFuzzyMatch :: Float
-weightFuzzyMatch = 0.1
-
--- | Weight constant for keyword frequency score.
-weightFrequency :: Float
-weightFrequency = 2.0
-
--- | Weight for each exact match.
-weightExactMatch :: Float
-weightExactMatch = 10.0
-
--- | Weight for keywords exactly appearing in selector (path).
-weightSelectorExact :: Float
-weightSelectorExact = 100.0
-
--- | Weight for keywords fuzzy appearing in selector (path).
-weightSelectorFuzzy :: Float
-weightSelectorFuzzy = weightFuzzyMatch
-
--- | Data structure to hold context snippet along with its start and end indices
-data ContextSnippet = ContextSnippet
-  { csStart :: Int,
-    csEnd :: Int,
-    csText :: Text
-  }
-  deriving (Show)
 
 -- | Score the text for how well it matches keywords and return the score along with
 -- snippets of where the matches were found.
@@ -194,6 +140,7 @@ computeSelectorScore keywords selector =
     likenessSum = sum $ map (\(_, _, likeness) -> likeness) wordLikeness
     -- Highlight matches directly within `selector` using start positions
     highlightedSelector = 
+      -- FIXME... off by one? and then keeps getting bumped?
       foldr
         (\(word, indx, _) acc ->
             let (prefix, rest) = splitAt (T.length (T.unwords $ take indx selectorWords')) acc
@@ -204,6 +151,31 @@ computeSelectorScore keywords selector =
         wordLikeness
   in
     (highlightedSelector, likenessSum)
+
+-- | Calculate proximity score for different keywords based on their positions. The closer
+-- the keywords are to each other, the higher the score. A significant bonus is applied for
+-- keywords appearing in the same order with small gaps.
+--
+-- Assumes @@keywordMatches@@ is supplied in the order keywords were given.
+--
+-- Example:
+-- >>> keywordOrderedProximity [("hello", 0), ("world", 2), ("foo", 5)]
+-- 28.57143
+keywordOrderedProximity :: [(Text, Int)] -> RankScore
+keywordOrderedProximity keywordMatches =
+  let positions = map snd keywordMatches
+      -- Calculate proximity between different keywords
+      keywordPairs = if length positions <= 1
+                     then []
+                     else zip positions (tail positions)
+      -- Will naturally be the distance between the keywords in the order they were given.
+      distances = map (\(i, j) -> abs (i - j)) keywordPairs
+      -- Calculate the average distance if there are distances available.
+      avgDistanceBonus = if null distances
+                         then 0
+                         else let average = fromIntegral (sum distances) / fromIntegral (length distances)
+                              in (1 / (average + 1))
+  in avgDistanceBonus * weightOrderedProximity
 
 -- Change this to do the fuzzy match and just do it off the batt and give bonus for 100% match.
 computeMatchScore :: [Text] -> [Text] -> ([(Text, Int)], RankScore)
@@ -223,65 +195,10 @@ computeFrequencyScore keywords contentWords =
   in
     preliminaryScore * weightFrequency
 
--- | Calculate proximity score for different keywords based on their positions. The closer
--- the keywords are to each other, the higher the score. A significant bonus is applied for
--- keywords appearing in the same order with small gaps.
---
--- Assumes @@keywordMatches@@ is supplied in the order keywords were given.
---
--- Example:
--- >>> keywordOrderedProximity [("hello", 0), ("world", 2), ("foo", 5)]
--- 28.57143
-keywordOrderedProximity :: [(Text, Int)] -> RankScore
-keywordOrderedProximity keywordMatches =
-  let positions = map snd keywordMatches
-      -- Calculate proximity between different keywords
-      keywordPairs = zip positions (tail positions)  -- Consecutive positions for order bonus
-      -- Will naturally be the distance between the keywords in the order they were given.
-      distances = map (\(i, j) -> abs (i - j)) keywordPairs
-      -- Calculate the average distance if there are distances available.
-      avgDistanceBonus =
-        if length keywordMatches <= 1
-          then 0
-          else
-            let average = fromIntegral (sum distances) / fromIntegral (length distances)
-            in (1 / (average + 1))
-  in avgDistanceBonus * weightOrderedProximity
-
 -- | Count the number of times a keyword appears in the content
 keywordFrequency :: [Text] -> Text -> Int
 keywordFrequency contentWords keyword =
   length $ filter (== keyword) contentWords
-
--- TODO: doesn't seem very forgiving to small word typos
--- | Calculate percentage likeness and index of the *best* (fuzzy) match.
---
--- Highest potential score is 100. As in 100% similarity.
---
--- Example:
--- >>> bestFuzzyMatch "togs" ["do", "you", "like", "tags?"]
--- (60.0,3)
-bestFuzzyMatch
-    :: Text
-    -- ^ Keyword to search for.
-    -> [Text]
-    -- ^ The words (tokens) to search in.
-    -> (Float, Int)
-    -- ^ Best likeness percentage and index where it was found.
-bestFuzzyMatch keyword contentWords =
-  let distances = zipWith (\i word -> (editDistance keyword word, i)) [0 ..] contentWords
-      (minDistance, bestMatchIndex) = minimumBy (comparing fst) distances
-      maxPossibleDistance = max (T.length keyword) (T.length (contentWords !! bestMatchIndex)) -- maximum distance based on word lengths; also unsafe function
-      likenessPercentage = max 0 (100 - (fromIntegral minDistance / fromIntegral maxPossibleDistance) * 100) -- Normalize distance to 100 scale
-   in (likenessPercentage, bestMatchIndex)
-
--- | Helper function to calculate Levenshtein distance using 'Text.EditDistance'
---
--- The distance returned will be between 0 (exact match) and the length of the longest
--- of the two words compared.
-editDistance :: Text -> Text -> Int
-editDistance keyword word =
-  levenshteinDistance defaultEditCosts (unpack keyword) (unpack word)
 
 -- | Extract and merge contexts for the found keyword matches, highlighting all keywords
 extractKeywordContexts :: [(Text, Int)] -> [Text] -> [ContextSnippet]
@@ -309,7 +226,6 @@ extractContextWithHighlights keywordMatches contentWords startIdx endIdx =
   let contextWords = take (endIdx - startIdx + 1) $ drop startIdx contentWords
       highlightedWords = map (\(i, word) -> if any (\(_, kwIdx) -> kwIdx == i) keywordMatches then "[" <> word <> "]" else word) (zip [startIdx..] contextWords)
   in ContextSnippet startIdx endIdx (T.unwords highlightedWords)
-
 
 -- | Check if the new snippet overlaps with existing ones based on indices
 contextsOverlap :: ContextSnippet -> ContextSnippet -> Bool

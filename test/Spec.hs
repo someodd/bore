@@ -8,12 +8,19 @@
 The approach to testing the search functionality is to simplly test the ranking of the
 search results, ensuring it ranks documents the way I'd desire and expect.
 
+FIX:
+
+*** Failed! Exception: '/tmp/test-search-d87346a2057ba79c/imcetkpmhkdrzbbynuwpsslhuyefvjlbkzlijpdzaocruknqpxyuokrtxdrldu_nbx_ngkrbvmyncql_zjrhyiybnrjhypakeguflgfqwcbgybnjifdoohrionhlfyeyziddsh_lelwzdythgllfkqpxiqkzmtewsqpgfuexavghftxzqjwetziojvhqxgsnkvtunlyiuhwp_nmeaxqdyfzciogiihrqrfsmgxi_nqcbbsowkiykhimolniqt.txt: withFile: invalid argument (File name too long)' (after 72 tests):
+Keywords ["imcetkpmhkdrzbbynuwpsslhuyefvjlbkzlijpdzaocruknqpxyuokrtxdrldu","nbx","ngkrbvmyncql","zjrhyiybnrjhypakeguflgfqwcbgybnjifdoohrionhlfyeyziddsh","lelwzdythgllfkqpxiqkzmtewsqpgfuexavghftxzqjwetziojvhqxgsnkvtunlyiuhwp","nmeaxqdyfzciogiihrqrfsmgxi","nqcbbsowkiykhimolniqt"]
+
+Some tests failed.
+
 -}
 
 module Main (main) where
 
 import Bore.FileLayout
-import Bore.SpacecookieClone.Search
+import Bore.SpacecookieClone.Search.Search
 
 import Control.Monad
 import Data.Text (Text)

@@ -7,7 +7,7 @@ https://github.com/sternenseemann/spacecookie/
 {-# LANGUAGE OverloadedStrings #-}
 module Bore.SpacecookieClone.Serve where
 
-import Bore.SpacecookieClone.Search
+import Bore.SpacecookieClone.Search.Search
 import Bore.SpacecookieClone.Config
 import Bore.SpacecookieClone.FileType
 import Bore.SpacecookieClone.Systemd

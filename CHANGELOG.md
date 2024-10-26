@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.19.0.0] - 2024-10-25
+
+### Changed
+
+* Search algo now "better" ranks proximity and also is stricter about fuzzy matches
+  influencing score and some other stuff I forget, could maybe even be considered a
+  "fix"
+
 ## [0.18.0.0] - 2024-10-23
 
 ### Changed
@@ -134,7 +142,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.18.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.19.0.0...HEAD
+[0.19.0.0]: https://github.com/someodd/bore/compare/v0.18.0.0...v0.19.0.0
 [0.18.0.0]: https://github.com/someodd/bore/compare/v0.17.0.0...v0.18.0.0
 [0.17.0.0]: https://github.com/someodd/bore/compare/v0.16.0.0...v0.17.0.0
 [0.16.0.0]: https://github.com/someodd/bore/compare/v0.15.0.0...v0.16.0.0

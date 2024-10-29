@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+* New under-the-hood tweaks that I consider significant, like formal verification of part
+  of the search algo
+
 ## [0.19.0.0] - 2024-10-25
 
 ### Changed

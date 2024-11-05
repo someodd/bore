@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed/Fixed
+
+* Search results are more picky and penalize against large distances for the keyword
+  proximity score
+
 ## [0.20.0.0] - 2024-10-29
 
 ### Changed

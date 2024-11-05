@@ -17,7 +17,15 @@ data ContextSnippet = ContextSnippet
 weightOrderedProximity :: Float
 weightOrderedProximity = 1000
 
+weightFarProximity :: Float
+weightFarProximity = 0.1  -- Example: Penalize for far distances
 
+weightCloseProximity :: Float
+weightCloseProximity = 2  -- Example: Reward for close distances
+
+-- | Max distance between keywords in ordered proximity bonus before a penalty.
+thresholdDistance :: Int
+thresholdDistance = 1
 
 -- | The minimum length of a keyword to be considered for fuzzy matching. This is very
 -- English-centric. For example, this would be foolish for Chinese, although it could use

@@ -126,6 +126,17 @@ computeSelectorScore keywords selector =
   in
     (highlightedSelector, likenessSum)
 
+weightFarProximity :: Float
+weightFarProximity = 0.1  -- Example: Penalize for far distances
+
+weightCloseProximity :: Float
+weightCloseProximity = 2  -- Example: Reward for close distances
+
+-- | Max distance between keywords in ordered proximity bonus before a penalty.
+thresholdDistance :: Int
+thresholdDistance = 1
+
+-- FIXME: I think longer documents will benefit more or something? there's something like that i'm not thinking of here.
 -- | Calculate proximity score for different keywords based on their positions. The closer
 -- the keywords are to each other, the higher the score. A significant bonus is applied for
 -- keywords appearing in the same order with small gaps.
@@ -138,18 +149,15 @@ computeSelectorScore keywords selector =
 keywordOrderedProximity :: [(Text, Int)] -> RankScore
 keywordOrderedProximity keywordMatches =
   let positions = map snd keywordMatches
-      -- Calculate proximity between different keywords
-      keywordPairs = if length positions <= 1
-                     then []
-                     else zip positions (tail positions)
-      -- Will naturally be the distance between the keywords in the order they were given.
+      keywordPairs = zip positions (tail positions)
       distances = map (\(i, j) -> abs (i - j)) keywordPairs
-      -- Calculate the average distance if there are distances available.
-      avgDistanceBonus = if null distances
-                         then 0
-                         else let average = fromIntegral (sum distances) / fromIntegral (length distances)
-                              in (1 / (average + 1))
-  in avgDistanceBonus * weightOrderedProximity
+      -- Adjusted calculation with threshold
+      avgDistanceBonus = case distances of
+        [] -> 0  -- No distances to calculate
+        _  -> let (average :: Float) = fromIntegral (sum distances) / fromIntegral (length distances)
+                  thresholdPenalty = if average > fromIntegral thresholdDistance then weightFarProximity else weightCloseProximity
+              in thresholdPenalty * (1 / (average + 1))
+  in avgDistanceBonus * weightOrderedProximity * fromIntegral (length positions)
 
 -- Change this to do the fuzzy match and just do it off the batt and give bonus for 100% match.
 computeMatchScore :: [Text] -> [Text] -> ([(Text, Int)], RankScore)

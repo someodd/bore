@@ -17,6 +17,8 @@ data ContextSnippet = ContextSnippet
 weightOrderedProximity :: Float
 weightOrderedProximity = 1000
 
+
+
 -- | The minimum length of a keyword to be considered for fuzzy matching. This is very
 -- English-centric. For example, this would be foolish for Chinese, although it could use
 -- pinyin, romanization of various logographic languages or whatever.
@@ -43,7 +45,7 @@ weightFuzzyMatch = 0.1
 
 -- | Weight constant for keyword frequency score.
 weightFrequency :: Float
-weightFrequency = 2.0
+weightFrequency = 1.1
 
 -- | Weight for each exact match.
 weightExactMatch :: Float

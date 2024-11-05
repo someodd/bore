@@ -11,13 +11,6 @@ You can increase verbosity like this:
 
   stack test --test-arguments "--verbose"
 
-FIX:
-
-*** Failed! Exception: '/tmp/test-search-d87346a2057ba79c/imcetkpmhkdrzbbynuwpsslhuyefvjlbkzlijpdzaocruknqpxyuokrtxdrldu_nbx_ngkrbvmyncql_zjrhyiybnrjhypakeguflgfqwcbgybnjifdoohrionhlfyeyziddsh_lelwzdythgllfkqpxiqkzmtewsqpgfuexavghftxzqjwetziojvhqxgsnkvtunlyiuhwp_nmeaxqdyfzciogiihrqrfsmgxi_nqcbbsowkiykhimolniqt.txt: withFile: invalid argument (File name too long)' (after 72 tests):
-Keywords ["imcetkpmhkdrzbbynuwpsslhuyefvjlbkzlijpdzaocruknqpxyuokrtxdrldu","nbx","ngkrbvmyncql","zjrhyiybnrjhypakeguflgfqwcbgybnjifdoohrionhlfyeyziddsh","lelwzdythgllfkqpxiqkzmtewsqpgfuexavghftxzqjwetziojvhqxgsnkvtunlyiuhwp","nmeaxqdyfzciogiihrqrfsmgxi","nqcbbsowkiykhimolniqt"]
-
-Some tests failed.
-
 -}
 
 module Main (main) where
@@ -40,9 +33,11 @@ import qualified Data.Set as Set
 
 -- Increase the number of tests to run (e.g., 500)
 --
--- I know this hase a "chatty" field, but I want to 
+-- High maxSuccess because testing search results can hide some weird edge cases.
+--
+-- This has a "chatty" field setting that might be useful in other cases.
 testArgs :: Args
-testArgs = stdArgs { maxSuccess = 1000 }
+testArgs = stdArgs { maxSuccess = 5000 }
 
 -- Main function that will soon hold doctests
 main :: IO ()

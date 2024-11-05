@@ -2,11 +2,14 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
--- TODO: generate filenames in same way like using text generation too. hav ea filepath newtype. just three.... exclude keywords.
 {- | Test suite for the search module.
 
 The approach to testing the search functionality is to simplly test the ranking of the
 search results, ensuring it ranks documents the way I'd desire and expect.
+
+You can increase verbosity like this:
+
+  stack test --test-arguments "--verbose"
 
 FIX:
 
@@ -22,6 +25,7 @@ module Main (main) where
 import Bore.FileLayout
 import Bore.SpacecookieClone.Search.Search
 
+import System.Environment (getArgs)
 import Control.Monad
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -34,29 +38,60 @@ import System.IO.Temp (withSystemTempDirectory)
 import Test.QuickCheck
 import qualified Data.Set as Set
 
-defaultFileNames :: [FilePath]
-defaultFileNames = ["all_keywords.txt", "sprinkled_keywords.txt", "no_keywords.txt"]
+-- Increase the number of tests to run (e.g., 500)
+--
+-- I know this hase a "chatty" field, but I want to 
+testArgs :: Args
+testArgs = stdArgs { maxSuccess = 1000 }
 
+-- Main function that will soon hold doctests
+main :: IO ()
+main = do
+  -- Check for a verbosity flag
+  args <- getArgs
+  let isVerbose = "--verbose" `elem` args
+
+  putStrLn "Running QuickCheck properties..."
+  quickCheckWith testArgs (prop_getSearchResultsRanking isVerbose)
+
+-- | Maximum number of characters per keyword.
+--
+-- This limit was put in place because of testing keywords in filenames.
+maxKeywordLength :: Int
+maxKeywordLength = 10
+
+-- | The maximum number of keywords to go in to the filename.
+maxNumberKeywordsFilename :: Int
+maxNumberKeywordsFilename = 4
+
+defaultFileNames :: [FilePath]
+defaultFileNames =
+  [ "all_keywords.txt"
+  -- ^ all keywords in order
+  , "sprinkled_keywords.txt"
+  -- ^ keywords "sprinkled" into a document
+  , "no_keywords.txt"
+  -- ^ no keywords in document
+  ]
+
+-- | The contents of the file that shouldn't match any keywords.
 noKeywordsMessage :: Text
 noKeywordsMessage = "This document does not contain any of the keywords we are searching for."
 
--- TODO:
--- needs to exclude filenames too! or intentionally match filename keywords and adjust for
--- such in the property! that would be a good test! could easily do this by using keyword
--- in filename and otherwise adding the filenames to nokeywords!
+-- | Keywords that should not be used in the tests.
 forbiddenKeywords :: [Text]
-forbiddenKeywords = (T.words "This document does not contain any of the keywords we are searching for.") ++ (concatMap selectorWords defaultFileNames)
+forbiddenKeywords = T.words noKeywordsMessage ++ concatMap selectorWords defaultFileNames
 
 -- FIXME: put keywords into file name too but nothing in document, but still make that first.
 -- Property to test if getSearchResults ranks documents as expected
-prop_getSearchResultsRanking :: Keywords -> Property
-prop_getSearchResultsRanking (Keywords keywords) = ioProperty $ do
+prop_getSearchResultsRanking :: Bool -> Keywords -> Property
+prop_getSearchResultsRanking isVerbose (Keywords keywords) = ioProperty $ do
   withSystemTempDirectory "test-search" $ \dir -> do
     -- Define file names and contents
     -- FIXME/TODO just add one keyword match. also how about a keyword in the file name?
     -- Fixme: ensure keyword safety with `isSafeFilename` somehow
     let
-      fileNamedAfterKeywords = T.unpack $ T.intercalate "_" keywords <> ".txt"
+      fileNamedAfterKeywords = T.unpack $ T.intercalate "_" (take (min maxNumberKeywordsFilename $ length keywords) keywords) <> ".txt"
       (fileNames :: [FilePath]) = [fileNamedAfterKeywords] ++ defaultFileNames
     let expectedResults = init fileNames  -- in that order, too
     let contiguousKeywords = T.unwords keywords
@@ -79,28 +114,32 @@ prop_getSearchResultsRanking (Keywords keywords) = ioProperty $ do
     let items = case response of
           MenuResponse i -> i
           _ -> []
-    putStrLn . show $ (zip fileNames fileContents)
-    _ <- forM  (items) $ \f -> putStrLn . show $ f
+
+    -- Useful information for debugging
+    -- Can use: stack test --test-arguments "--verbose"
+    if isVerbose
+      then do
+        putStrLn . show $ (zip fileNames fileContents)
+        _ <- forM  (items) $ \f -> putStrLn $ show f
+        putStrLn "\n"
+        pure ()
+      else
+        pure ()
+    
     return $ rankedFiles === expectedResults
 
--- FIXME: use isValid to ensure filenames are safe, also should check length!
--- Generate random text data
+-- could use isValid to ensure filenames are safe
 instance Arbitrary Text where
   arbitrary = sized $ \n -> do
-    -- Define the character generator (lowercase letters)
     let charGen = elements ['a'..'z']
     let forbiddenSet = Set.fromList forbiddenKeywords
-    -- Create a generator for Text with the desired properties
     suchThat
       (do
-        -- Generate a length between minLen and minLen + 10
-        len <- choose (2, 2 + n)
-        -- Generate a list of 'len' lowercase letters
+        -- Limit length to the minimum of maxKeywordLength and the generated size
+        len <- choose (2, min maxKeywordLength (2 + n))
         chars <- vectorOf len charGen
-        -- Convert the list of chars into Text
         return $ T.pack chars
       )
-      -- Predicate to ensure the generated Text is not in forbiddenWords
       (\txt -> txt `Set.notMember` forbiddenSet)
 
 newtype Keywords = Keywords [Text]
@@ -114,26 +153,3 @@ instance Arbitrary Keywords where
     if isSafeFilename combinedKeywords
       then return $ Keywords keywords
       else arbitrary  -- Retry if the generated keywords don't form a valid filename
-
--- I know it looks weird, but I believe this is what has to happen.
--- See: https://hackage.haskell.org/package/QuickCheck-2.15.0.1/docs/Test-QuickCheck.html#v:quickCheckAll
-return []
-
-runTests :: IO Bool
-runTests = $quickCheckAll
-
--- Run doctests independently
---runDoctests :: IO ()
---runDoctests = doctest ["src"]
-
--- Main function that runs both QuickCheck and Doctests
-main :: IO ()
-main = do
-  --putStrLn "Running doctests..."
-  --runDoctests
-  
-  putStrLn "Running QuickCheck properties..."
-  allTestsPassed <- runTests
-  if allTestsPassed
-    then putStrLn "All tests passed."
-    else putStrLn "Some tests failed."

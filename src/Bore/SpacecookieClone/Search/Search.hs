@@ -23,7 +23,7 @@ import Bore.SpacecookieClone.Search.WeightsTypes
 
 import Data.ByteString qualified as B
 import Data.ByteString.Char8 qualified as C8
-import Data.List (findIndices, foldl')
+import Data.List (foldl')
 import Data.List qualified as L
 import Data.Text (Text, toLower)
 import Data.Text qualified as T
@@ -49,32 +49,6 @@ rankDocument selector keywords content =
       (highlightedSelector, totalScore, keywordMatches) = computeTotalScore selector keywords contentWords
       contexts = extractKeywordContexts keywordMatches contentWords
   in (highlightedSelector, totalScore, contexts)
-
--- | Find all keyword *exact* matches in the document and their positions
--- | Find keyword matches (both exact and fuzzy) in the document and their positions.
---
--- Finds all exact matches, but if there are none, try to find the best fuzzy match.
---
--- Will skip fuzzy matches if the keyword is too short.
-findKeywordMatches
-  :: [Text]
-  -> [Text]
-  -> [(Text, Int, Float)]
-  -- ^ The Float is the percentage likeness of the fuzzy match. For exact match it's 100.
-findKeywordMatches keywords contentWords = concatMap findMatchesForKeyword keywords
-  where
-    findMatchesForKeyword :: Text -> [(Text, Int, Float)]
-    findMatchesForKeyword keyword =
-      case [(keyword, idx, 100) | idx <- findIndices (== keyword) contentWords] of
-        [] ->
-          if T.length keyword >= minFuzzyKeywordLength
-            then
-              filter (\(_, _, likeness) -> likeness >= minimumFuzzyLikeness)
-                [ let (likeness, idx) = bestFuzzyMatch keyword contentWords in (keyword, idx, likeness)
-                ]
-            else
-              []
-        exactMatches -> exactMatches
 
 
 -- | Compute total score based on proximity of different keyword matches and fuzzy matches

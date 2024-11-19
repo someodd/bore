@@ -5,6 +5,12 @@ user in the changelog.
 
 ## [Unreleased]
 
+## [0.22.0.0] - 2024-11-19
+
+### Fixed
+
+* Selector highlighting in search
+
 ## [0.21.0.0] - 2024-11-04
 
 Lots of behind-the-scenes stuff.
@@ -161,7 +167,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.21.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.22.0.0...HEAD
+[0.22.0.0]: https://github.com/someodd/bore/compare/v0.21.0.0...v0.22.0.0
 [0.21.0.0]: https://github.com/someodd/bore/compare/v0.20.0.0...v0.21.0.0
 [0.20.0.0]: https://github.com/someodd/bore/compare/v0.19.0.0...v0.20.0.0
 [0.19.0.0]: https://github.com/someodd/bore/compare/v0.18.0.0...v0.19.0.0

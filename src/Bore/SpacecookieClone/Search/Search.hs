@@ -23,7 +23,7 @@ import Bore.SpacecookieClone.Search.WeightsTypes
 
 import Data.ByteString qualified as B
 import Data.ByteString.Char8 qualified as C8
-import Data.List (foldl')
+import Data.List (foldl', sortOn)
 import Data.List qualified as L
 import Data.Text (Text, toLower)
 import Data.Text qualified as T
@@ -85,25 +85,10 @@ computeTotalScore selector keywords contentWords =
   in
     (selectorHighlighted, finalScore, keywordMatches)
 
--- | The score for keywords (fuzzy) appearing in the selector (path).
---
--- Currently has no weighted difference between exact and fuzzy matches. I think this is
--- fine since only one fuzzy match (the best) ever gets considered.
---
--- Example:
--- >>> computeSelectorScore ["hello", "world"] "test/this/hello_world-foo bar.foo"
--- 20000.0
---- >>> computeSelectorScore ["gopher"] "test/this/hello_world-foo bar.gopher.txt"
--- 16.666672
---- >>> computeSelectorScore ["gopher"] "test/this/hello_gopher-foo bar.gopher.txt"
--- 10000.0
--- >>> computeSelectorScore ["world"] "hello/world/foo.txt"
--- 10000.0
 computeSelectorScore
   :: [Text]
   -> FilePath
   -> (String, RankScore)
-  -- ^ The new selector with matches highlighted and the score.
 computeSelectorScore keywords selector =
   let
     selectorWords' = selectorWords selector
@@ -112,19 +97,28 @@ computeSelectorScore keywords selector =
       | (word, indx, likeness) <- findKeywordMatches keywords selectorWords'
       ]
     likenessSum = sum $ map (\(_, _, likeness) -> likeness) wordLikeness
-    -- Highlight matches directly within `selector` using start positions
-    highlightedSelector = 
-      -- FIXME... off by one? and then keeps getting bumped?
-      foldr
-        (\(word, indx, _) acc ->
-            let (prefix, rest) = splitAt (T.length (T.unwords $ take indx selectorWords')) acc
-                (toHighlight, suffix) = splitAt (T.length word) rest
-            in prefix <> "[" <> toHighlight <> "]" <> suffix
+
+    -- Adjust positions dynamically as matches are added
+    highlightedSelector =
+      snd $ foldl
+        (\(offset, acc) (word, indx, _) ->
+            let 
+                -- Calculate start position, adjusted by the offset
+                startPos = T.length (T.unwords $ take indx selectorWords') + offset + 1
+                endPos = startPos + T.length word
+                (prefix, rest) = splitAt startPos acc
+                (toHighlight, suffix) = splitAt (endPos - startPos) rest
+                -- Increment offset by the added length of the brackets
+                addedBrackets = T.length "[" + T.length "]"
+            in 
+                (offset + addedBrackets, prefix <> "[" <> toHighlight <> "]" <> suffix)
         )
-        selector
-        wordLikeness
+        (0, selector)
+        (sortOn (\(_, indx, _) -> indx) wordLikeness) -- Ensure matches are processed in order
   in
     (highlightedSelector, likenessSum)
+
+
 
 -- FIXME: I think longer documents will benefit more or something? there's something like that i'm not thinking of here.
 -- | Calculate proximity score for different keywords based on their positions. The closer

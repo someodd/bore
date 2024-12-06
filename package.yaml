@@ -53,6 +53,8 @@ dependencies:
   - mtl
   - commonmark
   - frontmatter
+  - ansi-wl-pprint
+  - commonmark
   - attoparsec
   - vector
   - time
@@ -62,6 +64,8 @@ dependencies:
   - raw-strings-qq
   - aeson
   - network-uri
+  - prettyprinter
+  - commonmark-extensions
   - neat-interpolation
   - yaml
   - spacecookie

@@ -10,4 +10,6 @@ debug.bc
 {{> meta.txt }}
 {{/containerize}}
 
+{{#wrapVt320StandardMode}}
 {{> partial}}
+{{/wrapVt320StandardMode}}

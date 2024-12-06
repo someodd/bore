@@ -26,6 +26,7 @@ data FrontMatter = FrontMatter {
     phlog :: Maybe Bool,
     date :: Maybe Text.Text,
     tags :: Maybe [Text.Text],
+    lambdas :: Maybe [Text.Text],
     draft :: Maybe Bool,
     skipMarkdown :: Maybe Bool,
     skipTemplating :: Maybe Bool,

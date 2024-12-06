@@ -43,6 +43,7 @@ library
       Bore.Text.Containers
       Bore.Text.Figlet
       Bore.Text.Gophermap
+      Bore.Text.Wrap
       Bore.Utils
   other-modules:
       Paths_bore
@@ -59,10 +60,12 @@ library
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Werror
   build-depends:
       aeson
+    , ansi-wl-pprint
     , attoparsec
     , base
     , bytestring
     , commonmark
+    , commonmark-extensions
     , containers
     , data-default
     , directory
@@ -84,6 +87,7 @@ library
     , network-uri
     , optparse-applicative
     , parsec
+    , prettyprinter
     , raw-strings-qq
     , socket
     , spacecookie
@@ -117,11 +121,13 @@ executable bore
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Werror
   build-depends:
       aeson
+    , ansi-wl-pprint
     , attoparsec
     , base
     , bore
     , bytestring
     , commonmark
+    , commonmark-extensions
     , containers
     , data-default
     , directory
@@ -143,6 +149,7 @@ executable bore
     , network-uri
     , optparse-applicative
     , parsec
+    , prettyprinter
     , raw-strings-qq
     , socket
     , spacecookie
@@ -173,11 +180,13 @@ test-suite bore-test
   build-depends:
       QuickCheck
     , aeson
+    , ansi-wl-pprint
     , attoparsec
     , base
     , bore
     , bytestring
     , commonmark
+    , commonmark-extensions
     , containers
     , data-default
     , directory
@@ -200,6 +209,7 @@ test-suite bore-test
     , network-uri
     , optparse-applicative
     , parsec
+    , prettyprinter
     , raw-strings-qq
     , socket
     , spacecookie

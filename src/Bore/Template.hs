@@ -27,6 +27,7 @@ import Data.Maybe (fromMaybe)
 import Bore.Text.Containers (applyContainer, ContainerCache)
 import Bore.Library (Library(..))
 import Bore.Text.Figlet
+import Bore.Text.Wrap (wrapParagraphs)
 
 -- FIXME: will get removed
 -- | This is where Mustache will look for files, especially for partials.
@@ -162,7 +163,9 @@ initialSubstitutions library maybeFrontMatter =
   in
     postFm ++ [
       ("containerize", overText (lambdaContainerize library.containers)),
-      ("figlet", overText (lambdaFiglet library.fonts))
+      ("figlet", overText (lambdaFiglet library.fonts)),
+      ("wrapVt320WideMode", overText (wrapParagraphs 132)),
+      ("wrapVt320StandardMode", overText (wrapParagraphs 80))
     ]
  where
   -- FIXME; if i want to add tagging support i'd add it here for hardcoding

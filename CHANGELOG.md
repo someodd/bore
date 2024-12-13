@@ -5,6 +5,17 @@ user in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+* You can now inherit frontmatter from parent templates
+* Wordwrapping lambdas for mustache
+* `templates/post.txt` is now default for templates!
+
+### Fixed
+
+* Some edge case(s) of runtime error due to unsafe `maximum` when using some things like
+  figlet or containerize
+
 ## [0.22.0.0] - 2024-11-19
 
 ### Fixed

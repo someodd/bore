@@ -89,6 +89,7 @@ library
     , parsec
     , prettyprinter
     , raw-strings-qq
+    , safe
     , socket
     , spacecookie
     , split
@@ -151,6 +152,7 @@ executable bore
     , parsec
     , prettyprinter
     , raw-strings-qq
+    , safe
     , socket
     , spacecookie
     , split
@@ -211,6 +213,7 @@ test-suite bore-test
     , parsec
     , prettyprinter
     , raw-strings-qq
+    , safe
     , socket
     , spacecookie
     , split

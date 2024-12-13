@@ -21,6 +21,7 @@ import System.FilePath ((</>), makeRelative)
 import System.Directory (listDirectory)
 import Data.List (isSuffixOf)
 import Control.Monad (forM)
+import Safe (maximumDef)
 --import TextUtils.Align (justifyDependencyPreformatted)
 
 -- Data type for the 'dimensions' section
@@ -96,11 +97,11 @@ applyContainer box body =
         bodyLines = T.lines body
 
         -- Calculate the maximum widths of the left and right borders
-        maxLeftBorderWidth = maximum (map T.length $ left (borders box))
-        maxRightBorderWidth = maximum (map T.length $ right (borders box))
+        maxLeftBorderWidth = maximumDef 0 (map T.length $ left (borders box))
+        maxRightBorderWidth = maximumDef 0 (map T.length $ right (borders box))
 
         -- Calculate the longest body line length
-        longestBodyLineLength = maximum (map T.length bodyLines)
+        longestBodyLineLength = maximumDef 0 (map T.length bodyLines)
 
         -- Calculate the total width based on the longest body line length, minWidth, and maxWidth
         totalWidth = max (minWidth (dimensions box)) (min (maxWidth (dimensions box)) (longestBodyLineLength + paddingLeft (dimensions box) + paddingRight (dimensions box) + maxLeftBorderWidth + maxRightBorderWidth))
@@ -119,7 +120,7 @@ applyContainer box body =
         borderedLines = zipWith (applySideBorders box maxLeftBorderWidth maxRightBorderWidth usableWidth) [paddingTop (dimensions box)..] paddedLines
 
         -- Calculate the full width of the lines including borders
-        fullLineWidth = maximum (map T.length borderedLines)
+        fullLineWidth = maximumDef 0 (map T.length borderedLines)
 
         -- Apply the top border
         topBorderLine = constructBorder (top . borders $ box) (cornerTopLeft . corner $ box) (cornerTopRight . corner $ box) fullLineWidth

@@ -2,11 +2,13 @@
 
 Tool for building your own hole in gopherspace (Gopher Protocol).
 
-I made this because I wanted to rebuild my [Burrow](https://github.com/someodd/burrow).
-
 It comes with its own Gopher Protocol server (ripped from [spacecookie](https://github.com/sternenseemann/spacecookie), but the gopherhole it builds can be used by pretty much any Gopher server.
 
 In use on gopher://gopher.someodd.zip/
+
+The tool is a little opinionated about structure.
+
+I made this because I wanted to rebuild my [Burrow](https://github.com/someodd/burrow).
 
 ## Installing
 
@@ -24,7 +26,7 @@ Here are some features, but I recommend checking out `example/` for an example g
 
 ## Quickstart
 
-Just download the lastest `.deb` from the releases.
+Just download the lastest `.deb` from the releases. Try also copying the `example/` for a demo to build (when you make a gopherhole, `bore` expects a certain directory structure and certain files to be present).
 
 Edit the `hostname` setting in the `/var/gopher/source/bore.toml` file to reflect the domain you want it to use (or just any IP address).
 
@@ -113,8 +115,3 @@ Just copy a single file to assets folder:
 ```
 lftp -e "put -O /output/assets/ 'cool picture.jpg'; quit" -u bore, sftp://simulacra
 ```
-
-## Plans to port from Burrow
-
-* Columnation
-* Possibly markdown (not sure how useful this actually is )

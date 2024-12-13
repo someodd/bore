@@ -53,24 +53,35 @@ import Bore.Config
 
 import qualified Data.Text.IO as TextIO
 import System.Directory (canonicalizePath)
+import System.FilePath (splitPath)
+import System.FilePath (makeRelative)
 import Data.Maybe (fromMaybe, catMaybes)
-
 import System.Directory (doesDirectoryExist)
 
--- FIXME: TODO: add markdown?
+isInPhlog :: FilePath -> Bool
+isInPhlog path = take 1 (splitPath path) == ["phlog/"]
+
 {- | Parse a file, returning the full destination path, the relative destination path, and
 (maybe) the frontmatter.
+
+sourceFile is the absolute path to the file being parsed.
 
 -}
 parseFile :: Library -> FilePath -> FilePath -> FilePath -> IO (FilePath, RelativePath, Maybe FrontMatter)
 parseFile library projectDirectory sourceFile destination = do
     fileContents <- TextIO.readFile sourceFile
+    -- FIXME: relative gets grabbed twice.
     let
+        relativePath' = makeRelative projectDirectory sourceFile
         -- FIXME: suppressing errors
         frontMatterAndRestMaybe = either (const Nothing) Just (parseFrontMatter fileContents)
-        frontMatterMaybe = fst <$> frontMatterAndRestMaybe
+        -- This expression below helps us define "post.txt" as a default parent for phlog posts.
+        frontMatterMaybe = case fst <$> frontMatterAndRestMaybe of
+            Just fm -> if null (parent fm) && isInPhlog relativePath'
+                   then Just $ fm { parent = Just "post.txt" }
+                   else Just fm
+            Nothing -> Nothing
         fileContentsStripped = snd <$> frontMatterAndRestMaybe
-
     afterTemplatingText <- possiblyTemplate frontMatterMaybe fileContents fileContentsStripped
     
     -- Probably important that turning it into a gopher menu is the last step.

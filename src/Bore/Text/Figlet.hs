@@ -10,6 +10,7 @@ import Data.Maybe (fromMaybe)
 import System.Directory (listDirectory)
 import System.FilePath ((</>), makeRelative)
 import Prelude hiding (lines)
+import Safe (maximumDef)
 
 -- Data type for Figlet font metadata
 data FigletFont = FigletFont
@@ -88,7 +89,7 @@ parseFigletChar textLines endMarker = map (cleanLine endMarker) textLines
 -- Normalize character widths to align properly without adding extra space
 normalizeCharWidth :: [Text] -> [Text]
 normalizeCharWidth textLines =
-  let maxWidth = maximum (map T.length textLines) -- Find the maximum width of lines
+  let maxWidth = maximumDef 0 (map T.length textLines) -- Find the maximum width of lines
   in map (T.justifyLeft maxWidth ' ') textLines -- Pad each line to the max width
 
 -- Render a Figlet font for given text
@@ -107,7 +108,7 @@ renderFiglet fontPath inputText = do
 renderText :: FigletFont -> Text -> Text
 renderText font input =
   let charLines = map (lookupFigletChar (charMap font)) (T.unpack input)
-      height = maximum $ map length charLines
+      height = maximumDef 0 $ map length charLines
       paddedCharLines = map (padLines height) charLines
   in T.unlines $ concatLines paddedCharLines
 

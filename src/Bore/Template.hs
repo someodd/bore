@@ -10,6 +10,7 @@ BUG: i tested if wrapped in lamba function but lambda doesn't exist, it'll just 
 {-# LANGUAGE RankNTypes #-}
 module Bore.Template (parseTemplate) where
 
+import qualified Data.Text.IO as TIO
 import qualified Data.Text as Text
 import qualified Data.HashMap.Strict as H
 import Text.Mustache.Compile
@@ -21,7 +22,7 @@ import qualified Text.Mustache.Types as Mtype
 import System.FilePath ((</>))
 import qualified Data.Map as Map
 
-import Bore.FrontMatter (FrontMatter(..), parent)
+import Bore.FrontMatter (FrontMatter(..), parent, updateFrontMatter, parseFrontMatter, splitFrontmatter)
 import Data.Maybe (fromMaybe)
 
 import Bore.Text.Containers (applyContainer, ContainerCache)
@@ -177,6 +178,7 @@ initialSubstitutions library maybeFrontMatter =
         userFrontMatterVars = fromMaybe [] ( maybeFrontMatter' >>= \fm -> fmap (Map.toList . Map.map (Mtype.String)) $ variables fm ) :: [(Text.Text, Mtype.Value)]
     in hardcodedFrontMatterVars ++ userFrontMatterVars
 
+-- FIXME: I think i'm reading the parent template twice
 -- contentType argument should be renamed to defaultContentType FIXME
 {- | Main template parsing entrypoint.
 
@@ -189,18 +191,28 @@ Some additional work with preparing the substitutions is performed.
 -}
 parseTemplate :: Library -> FilePath -> Maybe FrontMatter -> Text.Text -> IO Text.Text
 parseTemplate library projectRoot maybeFrontMatter sourceText = do
-  let
-    parentToUse = maybeFrontMatter >>= parent
-    substitutions' = initialSubstitutions library maybeFrontMatter
-  case parentToUse of
+  case maybeFrontMatter >>= parent of
     Nothing ->
-      parseTemplate' sourceText projectRoot Nothing substitutions'
-    Just parentTemplateName ->
+      let substitutions' = initialSubstitutions library maybeFrontMatter
+      in parseTemplate' sourceText projectRoot Nothing substitutions'
+    Just parentTemplateName -> do
+      let
+        parentPath =  projectRoot </> "templates" </> Text.unpack parentTemplateName
+      eitherParentFrontMatterOrException <- parseFrontMatter <$> TIO.readFile parentPath
+      let
+        -- ugly logic FIXME
+        mergedFrontMatter = case (eitherParentFrontMatterOrException, maybeFrontMatter) of
+          (Right (parentFrontMatter, _), Just mfm) -> Just $ updateFrontMatter parentFrontMatter mfm
+          (Right (parentFrontMatter, _), Nothing) -> Just parentFrontMatter
+          (Left _, Just mfm) -> Just mfm
+          (Left _, Nothing) -> Nothing
+        substitutions' = initialSubstitutions library mergedFrontMatter
+      -- It'd be useful to be able to pass the template text so we don't load it twice. FIXME
       parseTemplate'
         sourceText
         projectRoot
         -- The partial to use named below.
-        (Just $ "templates" </> Text.unpack parentTemplateName)
+        (Just parentPath)
         (("partial", Mtype.String sourceText):substitutions')  -- FIXME: partial is done somewhere else too
 
 -- FIXME
@@ -224,7 +236,11 @@ parseTemplate' mainText projectRoot maybeIncludePartial mustacheSubstitutions = 
     case maybeIncludePartial of
       Just parentTemplatePath -> newPrepareTemplateUsingParent projectRoot parentTemplatePath
       Nothing -> prepareTemplate projectRoot
-  pure $ substitute mainTemplate (Map.fromList $ if null mustacheSubstitutions then defaultTemplateSubstitutions else mustacheSubstitutions)
+  -- Piling on terrible hacks.
+  let templateText = substitute mainTemplate (Map.fromList $ if null mustacheSubstitutions then defaultTemplateSubstitutions else mustacheSubstitutions)
+  case splitFrontmatter templateText of
+    Nothing -> pure templateText
+    Just (_, restOfText) -> pure restOfText
  where
   -- | Prepare a template which will insert itself inside a parent template.
   --
@@ -237,6 +253,8 @@ parseTemplate' mainText projectRoot maybeIncludePartial mustacheSubstitutions = 
     let
       mainTemplateCache = H.fromList [("partial", mainTemplate)] :: H.HashMap String Template
       newSearchSpace = [projectRoot' </> "templates", projectRoot'] -- FIXME
+    -- fixme: need to trim out the frontmatter...
+    -- FIXME: why is this compiled twice?
     parentTemplate <- compileTemplateWithCache newSearchSpace mainTemplateCache (projectRoot </> parentTemplatePath)
     case parentTemplate of
       Left err -> error $ "Error with file " ++ (projectRoot </> parentTemplatePath) ++ ": " ++ show err

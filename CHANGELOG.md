@@ -5,6 +5,8 @@ user in the changelog.
 
 ## [Unreleased]
 
+## [0.23.0.0] - 2024-12-13
+
 ### Added
 
 * You can now inherit frontmatter from parent templates
@@ -178,7 +180,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.22.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.23.0.0...HEAD
+[0.23.0.0]: https://github.com/someodd/bore/compare/v0.22.0.0...v0.23.0.0
 [0.22.0.0]: https://github.com/someodd/bore/compare/v0.21.0.0...v0.22.0.0
 [0.21.0.0]: https://github.com/someodd/bore/compare/v0.20.0.0...v0.21.0.0
 [0.20.0.0]: https://github.com/someodd/bore/compare/v0.19.0.0...v0.20.0.0

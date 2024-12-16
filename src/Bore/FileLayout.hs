@@ -25,6 +25,11 @@ import Data.Text.Encoding (encodeUtf8)
 import qualified Data.ByteString as B
 import qualified Data.Text as T
 
+-- | Filename for the default *parent* template to be used for all phlog posts, unless
+-- overridden.
+templatePostFileName :: RelativePath
+templatePostFileName = "post.txt"
+
 {- | Directory which "gets left alone" during the build process, i.e., it won't get
 cleared out of output.
 
@@ -130,6 +135,10 @@ phlogIndexFileName = "phlog_index.txt"
 phlogFeedName :: RelativePath
 phlogFeedName = "atom.xml"
 
+-- | Path to includes/templates which can be used as partials and parents.
+templateDirectory :: RelativePath
+templateDirectory = "templates"
+
 -- FIXME: get directories like templates and containers from their
 -- respective modules?
 -- THIS IS IGNORED FOR COPY AND EVEN PARSING MAYBE FOR NOW? FIXME
@@ -139,7 +148,7 @@ Assumed to be relative to the source directory root.
 
 -}
 ignorePaths :: [FilePath]
-ignorePaths = ["templates", containersDirectory, figletFontDirectory, projectConfigFile, projectConfigFile]
+ignorePaths = [templateDirectory, containersDirectory, figletFontDirectory, projectConfigFile, projectConfigFile]
 
 {- | Canonicalize all ignore paths to absolute paths.
 

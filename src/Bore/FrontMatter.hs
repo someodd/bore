@@ -10,6 +10,7 @@ module Bore.FrontMatter
     , parseFrontMatter
     , updateFrontMatter
     , splitFrontmatter
+    , parseFrontMatterIgnoreErrors
     ) where
 
 import GHC.Generics (Generic)
@@ -76,6 +77,9 @@ parseFrontMatter content =
   case splitFrontmatter content of
     Just (frontmatterText, mainText) -> (, mainText) <$> decodeEither' (TE.encodeUtf8 frontmatterText)
     Nothing -> Left $ OtherParseException $ toException $ userError "No frontmatter found"
+
+parseFrontMatterIgnoreErrors :: Text.Text -> Maybe (FrontMatter, Text.Text)
+parseFrontMatterIgnoreErrors fileContents = either (const Nothing) Just (parseFrontMatter fileContents)
 
 -- FIXME: should only split if the document begins with ---\n, while currently this is too permissive.
 -- | Return the frontmatter and the rest of the text as separate Text values.

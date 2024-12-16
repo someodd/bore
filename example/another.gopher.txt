@@ -4,6 +4,9 @@ title: another
 tags: [cats, ducks]
 ---
 
+meta:
+{{> meta.txt }}
+
 this is a test file
 
 Lorem ipsum odor amet, consectetuer adipiscing elit. Parturient nullam dignissim aenean, lorem ad quisque per ac torquent. Potenti gravida mi erat turpis sem massa ullamcorper. Tempor magnis sollicitudin nostra venenatis adipiscing. Urna laoreet mollis posuere, orci nisl magnis dolor non. Sagittis habitant proin scelerisque eget habitant risus massa sed. Semper libero aliquet commodo suscipit; pretium lorem finibus. Pellentesque nec pulvinar nisi tempus imperdiet amet. Consequat metus risus consequat venenatis habitant leo tristique.

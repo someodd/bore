@@ -2,9 +2,11 @@
 date: 2024-09-16
 tags: [frogs, dogs, cats, ducks]
 gophermap: true
+title: test
 ---
 
-
+meta:
+{{> meta.txt }}
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu iaculis tellus, quis tincidunt magna. Etiam dignissim nibh non nisi pretium dignissim. In hac habitasse platea dictumst. Proin congue convallis risus, et placerat ante faucibus vitae. Integer quis metus odio. Cras iaculis, nisi ac tempor bibendum, urna diam vestibulum dui, ut vestibulum neque libero sit amet orci. Donec rutrum nisl sit amet nibh auctor porttitor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum pulvinar eget est pretium suscipit. Nulla facilisi. Sed ac placerat mauris, id egestas quam. Nam faucibus ex in ante tincidunt scelerisque. Cras ultrices dignissim velit, ac lobortis purus ultricies et. Ut malesuada sollicitudin ex eu ultricies. Praesent vulputate diam ac ligula pellentesque tincidunt.
 

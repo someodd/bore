@@ -44,7 +44,7 @@ build directory: where everything gets outputted to.
 module Bore.Parse (buildTree) where
 
 import Bore.FrontMatter
-import Bore.Template (parseTemplate)
+import Bore.Text.Template
 import Bore.Library
 import Bore.Phlog
 import Bore.FileLayout
@@ -57,9 +57,65 @@ import System.FilePath (splitPath)
 import System.FilePath (makeRelative)
 import Data.Maybe (fromMaybe, catMaybes)
 import System.Directory (doesDirectoryExist)
+import qualified Data.Text as Text
 
+-- FIXME: use constant
 isInPhlog :: FilePath -> Bool
 isInPhlog path = take 1 (splitPath path) == ["phlog/"]
+
+-- | Manipulate frontmatter for possible phlog posts.
+--
+-- * If the supplied frontmatter has a parent defined, do nothing.
+-- * If the supplied `FrontMatter` does not have a parent defined, and the file is in the
+--   phlog directory, set the parent to "post.txt".
+prepPostFrontMatter
+    :: FilePath
+    -- ^ The RELATIVE path to the file.
+    -> FrontMatter
+    -- ^ The frontmatter of the file.
+    -> FrontMatter
+    -- ^ The frontmatter with possible modifications.library
+prepPostFrontMatter relativePath' fm = do
+    if null (parent fm) && isInPhlog relativePath'
+        then fm { parent = Just . Text.pack $ templatePostFileName }
+        else fm
+
+-- FIXME: why is fileContents vs fileContentsStripped happening? why is it defaulting to ""
+-- | Run templating (Mustache) on the file contents passed, according to the frontmatter
+-- and possibly other factors.
+--
+-- IO because templating may use IO. Ideally, all of the templates would be loaded into
+-- the template cache once and we'd be done with IO.
+possiblyTemplate :: Maybe FrontMatter -> Text.Text -> Maybe Text.Text -> Library -> AbsolutePath -> IO Text.Text
+possiblyTemplate frontMatterMaybe fileContents fileContentsStripped library projectDirectory = case frontMatterMaybe of
+    Just frontMatter -> do
+        --parseTemplate library templateDir maybeFrontMatter currentText
+        --templateCache <- loadAllTemplatesIntoCache (projectDirectory </> templateDirectory)  -- FIXME: needs to go to library!!!
+        if fromMaybe False frontMatter.skipTemplating
+            then pure fileContents
+            else do
+                --parseTemplate library projectDirectory templateCache (Just frontMatter) (fromMaybe "" fileContentsStripped)
+                --parseTemplate library projectDirectory (Just frontMatter) (fromMaybe "" fileContentsStripped)
+                renderTemplate library projectDirectory (Just frontMatter) (fromMaybe "" fileContentsStripped)
+                -- library projectDirectory (Just frontMatter) (fromMaybe "" fileContentsStripped)
+                --renderTemplate projectDirectory (fromMaybe "" fileContentsStripped) (Text.unpack <$> frontMatter.parent) []
+    Nothing -> pure fileContents
+
+-- | Possibly transform the text into a gophermap according to its frontmatter (or possibly other factors?).
+possiblyGopherize :: Text.Text -> Maybe FrontMatter -> Library -> Text.Text
+possiblyGopherize someText maybeFrontMatter library = do
+    case maybeFrontMatter of
+        Just frontMatter -> do
+            if isGophermap frontMatter
+                then
+                    let
+                        hostname = library.config.server.hostname
+                        port = fromMaybe 70 (fromIntegral <$> library.config.server.listenPort)
+                    in
+                        toGophermap hostname port someText
+                else
+                    someText
+        Nothing -> someText
 
 {- | Parse a file, returning the full destination path, the relative destination path, and
 (maybe) the frontmatter.
@@ -71,46 +127,23 @@ parseFile :: Library -> FilePath -> FilePath -> FilePath -> IO (FilePath, Relati
 parseFile library projectDirectory sourceFile destination = do
     fileContents <- TextIO.readFile sourceFile
     -- FIXME: relative gets grabbed twice.
+    let relativePath' = makeRelative projectDirectory sourceFile
+
+    -- Now do a lot of prep/operations on this file's frontmatter, which may or may not exist.
     let
-        relativePath' = makeRelative projectDirectory sourceFile
-        -- FIXME: suppressing errors
-        frontMatterAndRestMaybe = either (const Nothing) Just (parseFrontMatter fileContents)
-        -- This expression below helps us define "post.txt" as a default parent for phlog posts.
-        frontMatterMaybe = case fst <$> frontMatterAndRestMaybe of
-            Just fm -> if null (parent fm) && isInPhlog relativePath'
-                   then Just $ fm { parent = Just "post.txt" }
-                   else Just fm
-            Nothing -> Nothing
+        frontMatterAndRestMaybe = parseFrontMatterIgnoreErrors fileContents
+        frontMatterMaybe = prepPostFrontMatter relativePath' <$> (fst <$> frontMatterAndRestMaybe)
         fileContentsStripped = snd <$> frontMatterAndRestMaybe
-    afterTemplatingText <- possiblyTemplate frontMatterMaybe fileContents fileContentsStripped
+
+    -- Parse with Mustache if necessary.
+    afterTemplatingText <- possiblyTemplate frontMatterMaybe fileContents fileContentsStripped library projectDirectory
     
     -- Probably important that turning it into a gopher menu is the last step.
-    let possiblyGopherizedText = possiblyGopherize afterTemplatingText frontMatterMaybe
+    let possiblyGopherizedText = possiblyGopherize afterTemplatingText frontMatterMaybe library
 
+    -- We're done transforming the damn thing! Write the file out and return useful data.
     (relativePath, fullDestination) <- writeDest projectDirectory sourceFile destination possiblyGopherizedText
     pure (fullDestination, relativePath, frontMatterMaybe)
-  where
-    possiblyTemplate frontMatterMaybe fileContents fileContentsStripped = case frontMatterMaybe of
-        Just frontMatter -> do
-            if fromMaybe False frontMatter.skipTemplating
-                then pure fileContents
-                else do
-                    parseTemplate library projectDirectory (Just frontMatter) (fromMaybe "" fileContentsStripped)
-        Nothing -> pure fileContents
-
-    possiblyGopherize someText maybeFrontMatter = do
-        case maybeFrontMatter of
-            Just frontMatter -> do
-                if isGophermap frontMatter
-                    then
-                        let
-                            hostname = library.config.server.hostname
-                            port = fromMaybe 70 (fromIntegral <$> library.config.server.listenPort)
-                        in
-                            toGophermap hostname port someText
-                    else
-                        someText
-            Nothing -> someText
 
 
 {- | Function which handles a file in the walking process.

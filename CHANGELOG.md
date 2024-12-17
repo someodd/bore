@@ -5,6 +5,10 @@ user in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+* Hacky markdown wordwrapping in templating
+
 ## [0.23.0.0] - 2024-12-13
 
 ### Added

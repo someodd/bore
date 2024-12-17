@@ -71,8 +71,6 @@ dependencies:
   - spacecookie
   - edit-distance
   - safe
-  - pandoc
-  - pandoc-types
 
 library:
   source-dirs: src

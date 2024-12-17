@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           bore
-version:        0.23.0.0
+version:        0.24.0.0
 synopsis:       Build gopherholes.
 description:    Static site builder, but for gopherholes. Manage phlogs with tags, use the Markdown renderer and Mustache templating system.
 category:       Network
@@ -87,8 +87,6 @@ library
     , neat-interpolation
     , network-uri
     , optparse-applicative
-    , pandoc
-    , pandoc-types
     , parsec
     , prettyprinter
     , raw-strings-qq
@@ -152,8 +150,6 @@ executable bore
     , neat-interpolation
     , network-uri
     , optparse-applicative
-    , pandoc
-    , pandoc-types
     , parsec
     , prettyprinter
     , raw-strings-qq
@@ -215,8 +211,6 @@ test-suite bore-test
     , neat-interpolation
     , network-uri
     , optparse-applicative
-    , pandoc
-    , pandoc-types
     , parsec
     , prettyprinter
     , raw-strings-qq

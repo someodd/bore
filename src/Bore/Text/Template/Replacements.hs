@@ -16,7 +16,7 @@ import Data.Maybe (fromMaybe)
 import Bore.Text.Containers (applyContainer, ContainerCache)
 import Bore.Library (Library(..))
 import Bore.Text.Figlet
-import Bore.Text.Wrap (wrapParagraphs)
+import Bore.Text.Wrap (wrapMarkdown)
 
 -- FIXME: should be deleted and just added to initialsubsitutions, i mean if we don't assume any changes to be appended later or something
 -- | Convert MustacheSubstitutions to a Value.
@@ -107,8 +107,8 @@ initialSubstitutions library maybeFrontMatter =
     postFm ++ [
       ("containerize", overText (lambdaContainerize library.containers)),
       ("figlet", overText (lambdaFiglet library.fonts)),
-      ("wrapVt320WideMode", overText (wrapParagraphs 132)),
-      ("wrapVt320StandardMode", overText (wrapParagraphs 80))
+      ("wrapVt320WideMode", overText (wrapMarkdown 132)),
+      ("wrapVt320StandardMode", overText (wrapMarkdown 80))
     ]
  where
   -- FIXME; if i want to add tagging support i'd add it here for hardcoding

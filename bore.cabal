@@ -87,6 +87,8 @@ library
     , neat-interpolation
     , network-uri
     , optparse-applicative
+    , pandoc
+    , pandoc-types
     , parsec
     , prettyprinter
     , raw-strings-qq
@@ -150,6 +152,8 @@ executable bore
     , neat-interpolation
     , network-uri
     , optparse-applicative
+    , pandoc
+    , pandoc-types
     , parsec
     , prettyprinter
     , raw-strings-qq
@@ -211,6 +215,8 @@ test-suite bore-test
     , neat-interpolation
     , network-uri
     , optparse-applicative
+    , pandoc
+    , pandoc-types
     , parsec
     , prettyprinter
     , raw-strings-qq

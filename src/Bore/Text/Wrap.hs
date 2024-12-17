@@ -1,76 +1,49 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{- | Wrap text in Markdown format without converting tabs to spaces.
 
-module Bore.Text.Wrap where
+This module has two problems because of the hacky solution:
 
-import Commonmark
+1. Gopher links have the potential of being wrapped in the middle of the link, which would
+   break the link.
+2. The tab character is preserved by using a placeholder, which is not ideal.
+
+-}
+module Bore.Text.Wrap (wrapMarkdown) where
+
 import Data.Text (Text)
 import qualified Data.Text as T
-import Text.Wrap (wrapText, defaultWrapSettings)
-import Control.Monad.Reader (Reader, asks, runReader)
+import Text.Pandoc
 
--- Configuration for the renderer
-data WrapConfig = WrapConfig
-  { lineWidth :: Int  -- Configurable line width
-  }
+-- Define the placeholder
+tabPlaceholder :: Text
+tabPlaceholder = "\FFFF"
 
--- Custom Renderer for Wrapping Text
-newtype WrapRenderer = WrapRenderer { getWrappedText :: Reader WrapConfig Text }
+-- Preprocess: Replace tabs with placeholder
+preprocess :: Text -> Text
+preprocess = T.replace "\t" tabPlaceholder
 
-instance Show WrapRenderer where
-  show (WrapRenderer t) = show (runReader t (WrapConfig 80))
-instance Rangeable WrapRenderer where
-  ranged _ (WrapRenderer t) = WrapRenderer t
-instance HasAttributes WrapRenderer where
-  addAttributes _ (WrapRenderer t) = WrapRenderer t
+-- Postprocess: Replace placeholder back to tabs
+postprocess :: Text -> Text
+postprocess = T.replace tabPlaceholder "\t"
 
-instance Semigroup WrapRenderer where
-  WrapRenderer a <> WrapRenderer b = WrapRenderer $ (<>) <$> a <*> b
+-- | Word wrap a Markdown document without converting tabs to spaces
+wrapMarkdown :: Int -> Text -> Text
+wrapMarkdown width input =
+  let
+    preprocessedInput = preprocess input
 
-instance Monoid WrapRenderer where
-  mempty = WrapRenderer $ pure ""
+    result = runPure $ do
+      -- Parse the preprocessed Markdown input into Pandoc AST
+      pandoc <- readMarkdown def { readerExtensions = pandocExtensions } preprocessedInput
 
--- Handle Paragraphs
-instance IsBlock WrapRenderer WrapRenderer where
-  paragraph (WrapRenderer content) = WrapRenderer $ do
-    width <- asks lineWidth
-    wrapped <- content
-    return $ wrapText defaultWrapSettings width wrapped <> "\n\n"
-  plain = id
-  thematicBreak = WrapRenderer $ return "------------------------------\n"
-  blockQuote = id
-  heading _ = id
-  codeBlock _ t = WrapRenderer $ return $ "```\n" <> t <> "\n```\n"
-  rawBlock _ t = WrapRenderer $ return t
-  list _ _ items = mconcat items
-  referenceLinkDefinition _ _ = mempty
+      -- Render the Pandoc AST back to Markdown with wrapping settings
+      writeMarkdown def
+          { writerWrapText = WrapAuto
+          , writerColumns = width
+          }
+          pandoc
 
--- Handle Inline Elements
-instance IsInline WrapRenderer where
-  str t = WrapRenderer $ return t
-  softBreak = WrapRenderer $ return " "
-  lineBreak = WrapRenderer $ return "\n"
-  emph (WrapRenderer t) = WrapRenderer $ fmap ("*" <>) (fmap (<> "*") t)
-  strong (WrapRenderer t) = WrapRenderer $ fmap ("**" <>) (fmap (<> "**") t)
-  code t = WrapRenderer $ return $ "`" <> t <> "`"
-  link _ _ (WrapRenderer t) = WrapRenderer t
-  image _ _ (WrapRenderer t) = WrapRenderer t
-  escapedChar c = WrapRenderer $ return $ T.singleton c
-  entity t = WrapRenderer $ return t
-  rawInline _ rawContent = WrapRenderer $ return rawContent
-
--- Parse and Render Markdown
-wrapMarkdownParagraphs :: Int -> Text -> Either String Text
-wrapMarkdownParagraphs width input =
-  case commonmark "source" input of
-    Left err -> Left $ show err
-    Right (WrapRenderer result) ->
-      Right $ runReader result (WrapConfig width)
-
-wrapParagraphs :: Int -> Text -> Text
-wrapParagraphs width input =
-  case wrapMarkdownParagraphs width input of
-    Left err -> "Error: " <> T.pack err
-    Right output -> output
+    wrappedOutput = case result of
+      Left err -> error $ show err
+      Right output -> postprocess output
+  in
+    wrappedOutput

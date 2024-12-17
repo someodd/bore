@@ -1,2 +1,11 @@
 cradle:
   stack:
+    - path: "./"
+      component: "bore:lib"
+    - path: "./"
+      component: "bore:bore"
+    - path: "./"
+      component: "bore:bore-test"
+
+ghc-options:
+  "$everything": "-threaded -rtsopts -with-rtsopts=-N -Wall -Werror -fhaddock"

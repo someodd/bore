@@ -89,7 +89,7 @@ containerCodec =
 parseContainer :: FilePath -> IO (Either [TomlDecodeError] Container)
 parseContainer filePath = decodeFileEither containerCodec filePath
 
--- Apply the container rules to the body of text
+-- | Apply the container rules to the body of text
 applyContainer :: Container -> Text -> Text
 applyContainer box body =
     let

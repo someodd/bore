@@ -5,6 +5,11 @@ user in the changelog.
 
 ## [Unreleased]
 
+### Changed
+
+* Prepping for Markdown/phlog post system (the word wrapping now uses this system, you may
+  notice some changes)
+
 ## [0.25.0.0] - 2024-12-17
 
 * Kind of less hacky Markdown wordwrapping in templating, less buggy

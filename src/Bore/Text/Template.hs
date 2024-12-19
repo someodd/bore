@@ -86,9 +86,7 @@ renderParentTemplate library projectRoot frontMatter sourceText parentTemplateNa
 
     -- this is weird and repeats...
     let templateText = substitute mainTemplate $ Map.fromList substitutions'
-    case splitFrontmatter templateText of
-        Nothing -> pure templateText
-        Just (_, restOfText) -> pure restOfText
+    pure templateText
 
 -- | Parse an orphan template (doesn't have a parent).
 renderOrphanTemplate :: Library -> FilePath -> Maybe FrontMatter -> Text.Text -> IO Text.Text

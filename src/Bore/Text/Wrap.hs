@@ -17,18 +17,26 @@ import Commonmark
 import Data.Text (Text)
 import qualified Data.Text as T
 import Text.Wrap (wrapText, defaultWrapSettings)
-import Control.Monad.Reader (Reader, asks, runReader)
+import Control.Monad.State (State, get, modify, runState, gets)
 
 -- Configuration for the renderer
 data WrapConfig = WrapConfig
  { lineWidth :: Int -- Configurable line width
  }
 
--- Custom Renderer for Wrapping Text
-newtype WrapRenderer = WrapRenderer { getWrappedText :: Reader WrapConfig Text }
+-- State to hold configuration and footnote data
+data RendererState = RendererState
+ { config :: WrapConfig       -- Configuration for wrapping
+ , footnotes :: [(Text, Text)] -- List of footnotes as (text, URL)
+ , nextFnNumber :: Int        -- Next footnote number
+ }
+
+newtype WrapRenderer = WrapRenderer { getWrappedText :: State RendererState Text }
 
 instance Show WrapRenderer where
- show (WrapRenderer t) = show (runReader t (WrapConfig 80))
+ show (WrapRenderer t) =
+   let initialState = RendererState (WrapConfig 80) [] 1
+   in show (fst $ runState t initialState)
 
 instance Rangeable WrapRenderer where
  ranged _ (WrapRenderer t) = WrapRenderer t
@@ -45,54 +53,57 @@ instance Monoid WrapRenderer where
 -- Handle Paragraphs and Other Block Elements
 instance IsBlock WrapRenderer WrapRenderer where
  paragraph (WrapRenderer content) = WrapRenderer $ do
-   width <- asks lineWidth
+   state <- get
+   let width = lineWidth (config state)
    wrapped <- content
    let wrappedNoNewlines = T.replace "\n" " " wrapped
    if '\t' `T.elem` wrappedNoNewlines
      then return $ wrappedNoNewlines <> "\n\n"
      else return $ wrapText defaultWrapSettings width wrappedNoNewlines <> "\n\n"
- 
+
  plain = id
- 
+
  thematicBreak = WrapRenderer $ return "------------------------------\n"
- 
+
  blockQuote (WrapRenderer content) = WrapRenderer $ do
-   width <- asks lineWidth
+   state <- get
+   let width = lineWidth (config state)
    wrapped <- content
    let wrappedLines = T.lines $ wrapText defaultWrapSettings (width - 2) wrapped
    return $ T.intercalate "\n" (map ("> " <>) wrappedLines) <> "\n\n"
- 
+
  heading level (WrapRenderer content) = WrapRenderer $ do
    wrapped <- content
    return $ T.replicate level "#" <> " " <> wrapped <> "\n\n"
- 
+
  codeBlock _ t = WrapRenderer $ return $ "```\n" <> t <> "```\n\n"
- 
+
  rawBlock _ t = WrapRenderer $ return t
- 
+
  list listType listSpacing items = WrapRenderer $ fmap (<> "\n") $ do
-   width <- asks lineWidth
-   let 
+   state <- get
+   let width = lineWidth (config state)
+   let
        wrapListItem item = do
          itemContent <- getWrappedText item
          let indent = T.replicate (listTypeToIndent listType) " "
-             wrappedContent = wrapText defaultWrapSettings 
+             wrappedContent = wrapText defaultWrapSettings
                                (width - (listTypeToIndent listType + 2)) itemContent
              lines' = T.lines wrappedContent
-             
+
              -- Determine list marker based on list type
              marker = case listType of
                BulletList bulletChar -> T.singleton bulletChar <> " "
                OrderedList startNum _ _ -> T.pack (show startNum) <> ". "
-         
-         return $ T.intercalate "\n" 
-           (indent <> marker <> head lines' : 
+
+         return $ T.intercalate "\n"
+           (indent <> marker <> head lines' :
             map (\l -> indent <> "  " <> l) (tail lines'))
-   
+
    wrappedItems <- mapM wrapListItem items
-   return $ T.intercalate "\n" wrappedItems <> 
+   return $ T.intercalate "\n" wrappedItems <>
             (if listSpacing == TightList then "" else "\n") <> "\n"
- 
+
  referenceLinkDefinition _ _ = mempty
 
 -- Helper to convert list type to indentation level
@@ -108,8 +119,18 @@ instance IsInline WrapRenderer where
  emph (WrapRenderer t) = WrapRenderer $ fmap ("*" <>) (fmap (<> "*") t)
  strong (WrapRenderer t) = WrapRenderer $ fmap ("**" <>) (fmap (<> "**") t)
  code t = WrapRenderer $ return $ "`" <> t <> "`"
- link _ _ (WrapRenderer t) = WrapRenderer t
- image _  _ (WrapRenderer t) = WrapRenderer t
+ link url _ (WrapRenderer t) = WrapRenderer $ do
+  content <- t
+  -- Retrieve current footnote state
+  currentFns <- gets footnotes
+  fnNumber <- gets nextFnNumber
+  -- Append the (text, URL) pair to footnotes and increment the footnote number
+  modify $ \s -> s { footnotes = currentFns ++ [(content, url)], nextFnNumber = fnNumber + 1 }
+  -- Insert footnote reference
+  let footnoteRef = "[" <> T.pack (show fnNumber) <> "]"
+  return $ content <> footnoteRef
+
+ image _ _ (WrapRenderer t) = WrapRenderer t
  escapedChar c = WrapRenderer $ return $ T.singleton c
  entity t = WrapRenderer $ return t
  rawInline _ rawContent = WrapRenderer $ return rawContent
@@ -120,7 +141,16 @@ wrapMarkdownParagraphs width input =
  case commonmark "source" input of
    Left err -> Left $ show err
    Right (WrapRenderer result) ->
-     Right $ runReader result (WrapConfig width)
+     let initialState = RendererState (WrapConfig width) [] 1
+         (mainText, finalState) = runState result initialState
+         footnotesList = footnotes finalState
+         numberedFootnotes = zip [1 :: Int ..] footnotesList
+         formattedFootnotes = if null footnotesList
+                              then ""
+                              else "## Footnotes\n\n" <> T.intercalate "\n" (map formatFootnote numberedFootnotes)
+     in Right $ mainText <> formattedFootnotes
+ where
+   formatFootnote (n, (text, url)) = "[" <> T.pack (show n) <> "]: " <> text <> ": " <> url
 
 wrapMarkdown :: Int -> Text -> Text
 wrapMarkdown width input =

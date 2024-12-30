@@ -1,14 +1,12 @@
 # Bore: Make Gopherholes
 
-Tool for building your own hole in gopherspace (Gopher Protocol).
+Join gopherspace and make your own home on the Gopher Protocol.
 
-It comes with its own Gopher Protocol server (ripped from [spacecookie](https://github.com/sternenseemann/spacecookie), but the gopherhole it builds can be used by pretty much any Gopher server.
+Think something like Jekyll (static site builder), but for gopherspace.
 
-In use on gopher://gopher.someodd.zip/
+Packaged with a server daemon to serve your gopherhole (ripped from [spacecookie](https://github.com/sternenseemann/spacecookie), but can generally be used to just build for other Gopher server daemons.
 
-The tool is a little opinionated about structure.
-
-I made this because I wanted to rebuild my [Burrow](https://github.com/someodd/burrow).
+In use on gopher://gopher.someodd.zip and here's the source (use it as an example project, try building with Bore): https://github.com/someodd/gopher.someodd.zip
 
 ## Installing
 
@@ -115,3 +113,9 @@ Just copy a single file to assets folder:
 ```
 lftp -e "put -O /output/assets/ 'cool picture.jpg'; quit" -u bore, sftp://simulacra
 ```
+
+## Other notes
+
+The tool is a little opinionated about structure.
+
+I made this because I wanted to rebuild my [Burrow](https://github.com/someodd/burrow).

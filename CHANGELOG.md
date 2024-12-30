@@ -5,6 +5,10 @@ user in the changelog.
 
 ## [Unreleased]
 
+### Changed
+
+* Phlog index links to display LESS info so it's more readable
+
 ## [0.28.0.0] - 2024-12-30
 
 ### Added

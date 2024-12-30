@@ -118,13 +118,12 @@ gopherLink itemType label selector hostname port = (Text.intercalate "\t" [itemT
 type PhlogMeta = (AbsolutePath, RelativePath, FrontMatter)
 -}
 toPhlogLabel :: PhlogMeta -> Text.Text
-toPhlogLabel (_, relativePath, frontMatter) =
+toPhlogLabel (_, _, frontMatter) =
     let
         title = fromMaybe "Untitled" frontMatter.title
         date = fromMaybe "No date" frontMatter.date
-        tags = Text.intercalate ", " (fromMaybe ["No tags"] (frontMatter.tags))
     in
-        date <> " - " <> title <> " - " <> tags <> " - " <> Text.pack relativePath
+        date <> " - " <> title
 
 {- | Create a gopher link to a phlog post.
 

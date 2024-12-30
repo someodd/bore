@@ -6,7 +6,7 @@ Think something like Jekyll (static site builder), but for gopherspace.
 
 Packaged with a server daemon to serve your gopherhole (ripped from [spacecookie](https://github.com/sternenseemann/spacecookie), but can generally be used to just build for other Gopher server daemons.
 
-In use on gopher://gopher.someodd.zip and here's the source (use it as an example project, try building with Bore): https://github.com/someodd/gopher.someodd.zip
+In use on gopher://gopher.someodd.zip and [its source is on GitHub](https://github.com/someodd/gopher.someodd.zip) (use it as an example project, try building with Bore).
 
 ## Installing
 

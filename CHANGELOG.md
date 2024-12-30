@@ -5,6 +5,8 @@ user in the changelog.
 
 ## [Unreleased]
 
+## [0.29.0.0] - 2024-12-30
+
 ### Changed
 
 * Phlog index links to display LESS info so it's more readable
@@ -214,7 +216,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.28.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.29.0.0...HEAD
+[0.29.0.0]: https://github.com/someodd/bore/compare/v0.28.0.0...v0.29.0.0
 [0.28.0.0]: https://github.com/someodd/bore/compare/v0.27.0.0...v0.28.0.0
 [0.27.0.0]: https://github.com/someodd/bore/compare/v0.26.0.0...v0.27.0.0
 [0.26.0.0]: https://github.com/someodd/bore/compare/v0.25.0.0...v0.26.0.0

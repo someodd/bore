@@ -16,10 +16,48 @@ specification)
 
 -}
 
-module Bore.Text.Gophermap (toGophermap) where
+module Bore.Text.Gophermap (toGophermap, imagePathToGopherType, gopherTypeByExt) where
 
 import Data.Text (Text)
 import qualified Data.Text as T
+import System.FilePath (takeExtension)
+import Network.Mime (defaultMimeMap, mimeByExt)
+import qualified Data.ByteString.Char8 as BS
+import Data.List (isPrefixOf)
+
+{- | Return a guess for the gopher item type based on the file extension of the
+path/selector passed (assumed to be an image).
+
+The default is just 'I' for image file. Basically, if it's not a GIF.
+
+Could be expanded to support non-canonical 'p' (png) type.
+-}
+imagePathToGopherType
+  :: FilePath
+  -- ^ Selector for an image which includes the file extension.
+  -> Char
+  -- ^ Gopher item type.
+imagePathToGopherType selector =
+  case takeExtension selector of
+    ".gif" -> 'g'
+    _ -> 'I'
+
+-- could be expanded to handle different things
+-- Map MIME types to Gopher menu item types
+mimeToGopherType :: BS.ByteString -> Char
+mimeToGopherType mime
+  | "text/" `BS.isPrefixOf` mime = '0'  -- Plain text
+  | "image/" `BS.isPrefixOf` mime = 'I' -- Image
+  | "audio/" `BS.isPrefixOf` mime = 's' -- Sound
+  | otherwise = '9'                     -- Binary or other
+
+-- fixme: what about http/h
+-- Map file extensions to Gopher menu item types
+gopherTypeByExt :: BS.ByteString -> FilePath -> Char
+gopherTypeByExt defaultType filePath
+  | "http://" `isPrefixOf` filePath || "https://" `isPrefixOf` filePath = 'h'
+  | otherwise =
+    mimeToGopherType $ mimeByExt defaultMimeMap defaultType (T.pack $ "." ++ takeExtension filePath)
 
 {- | Transform a regular text file into a Gopher menu.
 
@@ -41,9 +79,10 @@ toGophermap domain port inputText = (T.unlines . map processLine . T.lines $ inp
     isMenuEntry :: Text -> Bool
     isMenuEntry t = not (T.null t) && T.head t `elem` gopherFileTypes && "\t" `T.isInfixOf` t
 
-    -- Gopher file types as per RFC1436 and spacecookie.
+    -- Gopher file types as per RFC1436 and spacecookie. Also include 'h' for HTTP. May
+    -- have to be expanded in future. Potential for complications.
     gopherFileTypes :: [Char]
-    gopherFileTypes = "0123456789+gITi"
+    gopherFileTypes = "0123456789+gITih"
 
     -- Add domain and port if they're missing from the line.
     addDomainAndPort :: Text -> Text

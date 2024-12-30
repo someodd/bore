@@ -71,6 +71,7 @@ dependencies:
   - spacecookie
   - edit-distance
   - safe
+  - mime-types
 
 library:
   source-dirs: src

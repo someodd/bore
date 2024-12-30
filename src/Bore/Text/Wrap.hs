@@ -18,10 +18,20 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Text.Wrap (wrapText, defaultWrapSettings)
 import Control.Monad.State (State, get, modify, runState, gets)
+import Data.Maybe (fromMaybe)
+
+import qualified Bore.Library as Library
+import Bore.Text.Gophermap (imagePathToGopherType, gopherTypeByExt)
+import Bore.Config
 
 -- Configuration for the renderer
 data WrapConfig = WrapConfig
- { lineWidth :: Int -- Configurable line width
+ { library :: Library.Library
+ -- ^ Assets and config(s) to use for rendering.
+ , gopherMap :: Bool
+ -- ^ Render as a gophermap? Meaning menu links.
+ , lineWidth :: Int
+ -- ^ Configurable line width
  }
 
 -- State to hold configuration and footnote data
@@ -33,10 +43,9 @@ data RendererState = RendererState
 
 newtype WrapRenderer = WrapRenderer { getWrappedText :: State RendererState Text }
 
+-- FIXME: what the heck is going on here?
 instance Show WrapRenderer where
- show (WrapRenderer t) =
-   let initialState = RendererState (WrapConfig 80) [] 1
-   in show (fst $ runState t initialState)
+ show _ = "Do not use!"
 
 instance Rangeable WrapRenderer where
  ranged _ (WrapRenderer t) = WrapRenderer t
@@ -130,18 +139,30 @@ instance IsInline WrapRenderer where
   let footnoteRef = "[" <> T.pack (show fnNumber) <> "]"
   return $ content <> footnoteRef
 
- image _ _ (WrapRenderer t) = WrapRenderer t
+ -- FIXME
+ image url _ (WrapRenderer t) = WrapRenderer $ do
+  altText <- t
+  let
+    imageGopherType = imagePathToGopherType (T.unpack url)
+  isGopherMap <- gets (gopherMap . config)
+  port <- gets (T.pack . show . fromMaybe 70 . listenPort . server . Library.config . library . config)
+  host <- gets (hostname . server . Library.config . library . config)
+  if isGopherMap
+    then return $ (T.pack [imageGopherType]) <> altText <> "\t" <> url <> "\t" <> host <> "\t" <> port
+    else return $ "!" <> altText <> " => " <> url
+
  escapedChar c = WrapRenderer $ return $ T.singleton c
  entity t = WrapRenderer $ return t
  rawInline _ rawContent = WrapRenderer $ return rawContent
 
+-- TODO/FIXME: add option for parsing as menu (for footnotes and images)
 -- Parse and Render Markdown
-wrapMarkdownParagraphs :: Int -> Text -> Either String Text
-wrapMarkdownParagraphs width input =
+wrapMarkdownParagraphs :: Library.Library -> Bool -> Int -> Text -> Either String Text
+wrapMarkdownParagraphs library gopherMap width input =
  case commonmark "source" input of
    Left err -> Left $ show err
    Right (WrapRenderer result) ->
-     let initialState = RendererState (WrapConfig width) [] 1
+     let initialState = RendererState (WrapConfig library gopherMap width) [] 1
          (mainText, finalState) = runState result initialState
          footnotesList = footnotes finalState
          numberedFootnotes = zip [1 :: Int ..] footnotesList
@@ -150,10 +171,33 @@ wrapMarkdownParagraphs width input =
                               else "## Footnotes\n\n" <> T.intercalate "\n" (map formatFootnote numberedFootnotes)
      in Right $ mainText <> formattedFootnotes
  where
-   formatFootnote (n, (text, url)) = "[" <> T.pack (show n) <> "]: " <> text <> ": " <> url
+   -- FIXME: make into links if gopherMap! need way to determine type of gopherlink in the end.
+   formatFootnote :: (Int, (Text, Text)) -> Text
+   formatFootnote (n, (text, url)) = do
+    let
+      host = library.config.server.hostname
+      port = T.pack . show . fromMaybe 70 $ library.config.server.listenPort
+    if gopherMap
+      then
+        case gopherTypeByExt "text/" $ T.unpack url of
+          'h' -> "h" <> "[" <> T.pack (show n) <> "]: " <> text <> ": " <> url <> "\tURL:" <> url <> "\t" <> host <> "\t" <> port
+          otherType -> (T.pack [otherType]) <> "[" <> T.pack (show n) <> "]: " <> text <> ": " <> url <> "\t" <> url <> "\t" <> host <> "\t" <> port
+      else "[" <> T.pack (show n) <> "]: " <> text <> ": " <> url
 
-wrapMarkdown :: Int -> Text -> Text
-wrapMarkdown width input =
- case wrapMarkdownParagraphs width input of
+{- | Do special things to Markdown for gopherspace.
+
+I mostly made this for phlog articles.
+
+-}
+wrapMarkdown
+  :: Library.Library
+  -- ^ Format the markdown document according to these Assets and config!
+  -> Bool
+  -- ^ Output a gophermap isntead of just a regular text document.
+  -> Int
+  -> Text
+  -> Text
+wrapMarkdown library gopherMap width input =
+ case wrapMarkdownParagraphs library gopherMap  width input of
    Left err -> "Error: " <> T.pack err
    Right output -> output

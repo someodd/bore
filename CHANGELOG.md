@@ -5,6 +5,11 @@ user in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+* Markdown link footnotes and images are now transformed into the appropriate kind of
+  gopher menu item type if the article is being rendered as a menu
+
 ## [0.27.0.0] - 2024-12-20
 
 ### Added

@@ -103,12 +103,13 @@ initialSubstitutions library maybeFrontMatter =
   let
     -- FIXME: why is there this doubling-up on the effort of translating the frontmatter, seemingly? just because it can't handle lists?
     postFm = substitutionsFromFrontMatter maybeFrontMatter (toSubstitutions . toMustache <$> maybeFrontMatter)
+    gophermap = fromMaybe False (isGophermap <$> maybeFrontMatter)
   in
     postFm ++ [
       ("containerize", overText (lambdaContainerize library.containers)),
       ("figlet", overText (lambdaFiglet library.fonts)),
-      ("wrapVt320WideMode", overText (wrapMarkdown 132)),
-      ("wrapVt320StandardMode", overText (wrapMarkdown 80))
+      ("wrapVt320WideMode", overText (wrapMarkdown library gophermap 132)),
+      ("wrapVt320StandardMode", overText (wrapMarkdown library gophermap 80))
     ]
  where
   -- FIXME; if i want to add tagging support i'd add it here for hardcoding

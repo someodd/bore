@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           bore
-version:        0.26.0.0
+version:        0.27.0.0
 synopsis:       Build gopherholes.
 description:    Static site builder, but for gopherholes. Manage phlogs with tags, use the Markdown renderer and Mustache templating system.
 category:       Network
@@ -82,6 +82,7 @@ library
     , hashmap
     , hourglass
     , liquidhaskell
+    , mime-types
     , mtl
     , mustache
     , neat-interpolation
@@ -145,6 +146,7 @@ executable bore
     , hashmap
     , hourglass
     , liquidhaskell
+    , mime-types
     , mtl
     , mustache
     , neat-interpolation
@@ -206,6 +208,7 @@ test-suite bore-test
     , hashmap
     , hourglass
     , liquidhaskell
+    , mime-types
     , mtl
     , mustache
     , neat-interpolation

@@ -40,7 +40,7 @@ cp ./reposcripts/bore.toml $TEMPORARY_PKG_DIR/var/gopher/source/bore.toml
 # Run fpm to create the Debian package.
 fpm -s dir -t deb -n bore -v ${VERSION} \
     --description "Bore gopherhole builder. Built on ${DISTRO}, Kernel ${KERNEL}, libc ${LIBC}" \
-    --depends "libc6 (>= ${LIBC})" \
+    --depends "libc6" \
     --maintainer "someodd <someodd@pm.me>" \
     --url "http://www.someodd.zip/showcase/bore" \
     --license "GPL" \

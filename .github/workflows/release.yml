@@ -14,9 +14,38 @@ jobs:
     outputs:
       version: ${{ steps.get_version.outputs.VERSION }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Compute Cache Key
+        id: cache_key
+        run: |
+          key=$(cat stack.yaml stack.yaml.lock package.yaml | sha256sum | cut -d ' ' -f1)
+          echo "key=$key" >> $GITHUB_ENV
+
+      - name: Cache Stack Dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.stack
+            !~/.stack/programs
+            ./.stack-work
+          key: ${{ runner.os }}-stack-${{ env.key }}
+          restore-keys: |
+            ${{ runner.os }}-stack-${{ hashFiles('stack.yaml', 'stack.yaml.lock', 'package.yaml') }}
+            ${{ runner.os }}-stack-
+
+      - name: Setup Haskell
+        uses: haskell-actions/setup@v2
+        with:
+          ghc-version: '9.6.6'
+          enable-stack: 'true'
+          stack-version: 'latest'
+
+      - name: Install Dependencies
+        run: stack build --only-dependencies
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -31,7 +60,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Restore Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.stack
+            !~/.stack/programs
+            ./.stack-work
+          key: ${{ needs.create_release.outputs.cache_key }}
+          restore-keys: |
+            ${{ runner.os }}-stack-${{ hashFiles('stack.yaml', 'stack.yaml.lock', 'package.yaml') }}
+            ${{ runner.os }}-stack-
 
       - name: Setup Haskell
         uses: haskell-actions/setup@v2
@@ -40,33 +82,8 @@ jobs:
           enable-stack: 'true'
           stack-version: 'latest'
 
-      - name: Compute Cache Key
-        id: cache_key
-        run: echo "key=$(grep -v '^version:' package.yaml | sha256sum | cut -d ' ' -f1)" >> $GITHUB_ENV
-        
-      - name: Cache Stack dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.stack
-            !~/.stack/programs
-            ./.stack-work
-          key: ${{ runner.os }}-stack-${{ hashFiles('stack.yaml') }}-${{ env.key }}
-          restore-keys: |
-            ${{ runner.os }}-stack-
-
-      - name: Cache fpm gems
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gem
-          key: ${{ runner.os }}-gem
-
-      - name: Install fpm
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ruby ruby-dev rubygems build-essential z3
-          sudo gem install --no-document fpm
+      - name: Install Dependencies
+        run: stack build --only-dependencies
 
       - name: Build and Package
         id: build_package

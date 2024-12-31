@@ -25,7 +25,7 @@ RUN git clone --depth=1 https://github.com/someodd/bore.git /tmp/bore \
     && rm -rf /tmp/bore
 
 # Install Bore using the specified version
-RUN curl -L -o bore.deb https://github.com/someodd/bore/releases/download/v${BORE_VERSION}/bore_${BORE_VERSION}_amd64_Ubuntu_kernel6.5.0-1025-azure_libc2.35.deb \
+RUN curl -L -o bore.deb https://github.com/someodd/bore/releases/download/v0.33.0.0/bore_0.33.0.0_amd64_Ubuntu_kernel6.5.0-1025-azure_libc2.35.deb \
     && dpkg -i bore.deb \
     && rm bore.deb
 
@@ -33,8 +33,7 @@ RUN curl -L -o bore.deb https://github.com/someodd/bore/releases/download/v${BOR
 RUN echo 'user = "bore"' >> /var/gopher/source/bore.toml
 
 # Set permissions
-RUN useradd -m -d /var/gopher -s /bin/false bore \
-    && chown -R bore:bore /var/gopher/
+RUN chown -R bore:bore /var/gopher/
 
 # Expose Gopher port
 EXPOSE 7070

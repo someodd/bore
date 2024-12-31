@@ -83,7 +83,8 @@ jobs:
       - name: Install Required Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y z3
+          sudo apt-get install -y ruby ruby-dev rubygems build-essential z3
+          sudo gem install --no-document fpm          
 
       - name: Setup Haskell
         uses: haskell-actions/setup@v2

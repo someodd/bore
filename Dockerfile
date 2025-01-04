@@ -121,9 +121,9 @@ RUN echo 'user = "bore"' >> /var/gopher/source/bore.toml
 # Set permissions
 RUN chown -R bore:bore /var/gopher/
 
-# Add bore user and guestholes group
+# Add guestholes group and ensure bore user is part of it
 RUN groupadd -g 1001 guestholes && \
-    useradd -m -d /var/gopher -s /bin/false -g guestholes bore
+    usermod -aG guestholes bore
 
 # Set permissions for Bore directory
 RUN mkdir -p /var/gopher && \

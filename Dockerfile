@@ -4,12 +4,12 @@
 #
 # Run containers with something like:
 #
-# docker run -d --name user1_bore \
-#   --hostname user1.bore \
+# docker run -d --name boreguest_user1 \
+#   --hostname boreguest_user1 \
 #   --network gopher_net \
 #   -v /var/gopher/guests/user1:/var/gopher \
-#   -e SFTP_USERNAME=user1 \
-#   -e SFTP_PASSWORD=securepassword \
+#   -e SFTP_USERNAME=boreguest_user1 \
+#   -e SFTP_PASSWORD=password \
 #   bore:latest
 #
 # Host Setup for SFTP Forwarding:
@@ -20,22 +20,23 @@
 # 2. **Add Host Forwarding Rules**:
 #    Set up SSH to forward connections to the correct container based on the username.
 #
-#    Edit `/etc/ssh/sshd_config`:
-#      Match User user1
-#         ForceCommand ssh -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-#            -p 22 user1@user1.bore
+# Edit `/etc/ssh/sshd_config` to forward SFTP connections for usernames starting with `boreguest_`:
+#
+#    Match User boreguest_*
+#        ForceCommand ssh -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+#            -p 22 %u@%u
 #
 #    Restart SSH:
 #      sudo systemctl restart ssh
 #
 # 3. **Run the Containers**:
-#    docker run -d --name user1_bore \
-#      --hostname user1.bore \
-#      --network gopher_net \
-#      -v /var/gopher/guests/user1:/var/gopher \
-#      -e SFTP_USERNAME=user1 \
-#      -e SFTP_PASSWORD=securepassword \
-#      bore:latest
+# docker run -d --name boreguest_user1 \
+#   --hostname boreguest_user1 \
+#   --network gopher_net \
+#   -v /var/gopher/guests/user1:/var/gopher \
+#   -e SFTP_USERNAME=boreguest_user1 \
+#   -e SFTP_PASSWORD=password \
+#   bore:latest
 #
 # Gopher Routing:
 #
@@ -62,11 +63,12 @@
 # - Backup individual user data:
 #    tar -czf /backups/user1_data_$(date +%F).tar.gz /var/gopher/guests/user1
 
-# Define the pinned version as a build argument
-ARG BORE_VERSION=0.33.0.0
 
 # Use Debian Slim as the base image
 FROM debian:bullseye-slim
+
+# Define the pinned version
+ENV BORE_VERSION=0.33.0.0
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -84,9 +86,9 @@ RUN git clone --depth=1 https://github.com/someodd/bore.git /tmp/bore \
     && mv /tmp/bore/example/* /var/gopher/source/ \
     && rm -rf /tmp/bore
 
-# FIXME: not using arg for version
+# FIXME
 # Install Bore using the specified version
-RUN curl -L -o bore.deb https://github.com/someodd/bore/releases/download/v0.33.0.0/bore_0.33.0.0_amd64_Ubuntu_kernel6.5.0-1025-azure_libc2.35.deb \
+RUN curl -L -o bore.deb https://github.com/someodd/bore/releases/download/v${BORE_VERSION}/bore_${BORE_VERSION}_amd64_Ubuntu_kernel6.5.0-1025-azure_libc2.35.deb \
     && dpkg -i bore.deb \
     && rm bore.deb
 
@@ -111,7 +113,7 @@ RUN mkdir /var/run/sshd && \
     echo '    AllowTcpForwarding no' >> /etc/ssh/sshd_config
 
 # Accept SFTP username and password as environment variables
-ENV SFTP_USERNAME=user1 SFTP_PASSWORD=password
+ENV SFTP_USERNAME=boreguest_user1 SFTP_PASSWORD=password
 
 # Add SFTP user dynamically at container runtime
 RUN useradd -m -d /var/gopher -s /usr/sbin/nologin $SFTP_USERNAME && \

@@ -1,5 +1,3 @@
-# I made this to make hosting a bunch of user's gopherholes easier and more secure.
-#
 # How to use:
 #
 # docker build -t bore:latest .
@@ -9,85 +7,60 @@
 # docker run -d --name user1_bore \
 #   --hostname user1.bore \
 #   --network gopher_net \
+#   -v /var/gopher/guests/user1:/var/gopher \
+#   -e SFTP_USERNAME=user1 \
+#   -e SFTP_PASSWORD=securepassword \
 #   bore:latest
 #
-# Be sure to set up the Docker network and host system properly for SFTP and Gopher routing.
-# This includes configuring `inetd` for dynamic selector mapping and using shared group
-# permissions for data directories.
-#
-# Host Setup:
+# Host Setup for SFTP Forwarding:
 #
 # 1. **Create Docker Network**:
 #    docker network create gopher_net
 #
-# 2. **Create a User and Data Directory**:
-#    sudo useradd -m -d /sftp/$username -s /usr/sbin/nologin $username
-#    sudo passwd $username
-#    sudo mkdir -p /sftp/$username/data
+# 2. **Add Host Forwarding Rules**:
+#    Set up SSH to forward connections to the correct container based on the username.
 #
-# 3. **Assign Shared Group Permissions**:
-#    sudo groupadd guestholes
-#    sudo usermod -aG guestholes $username
-#    sudo chown root:root /sftp/$username
-#    sudo chmod 755 /sftp/$username
-#    sudo chown $username:guestholes /sftp/$username/data
-#    sudo chmod 770 /sftp/$username/data
+#    Edit `/etc/ssh/sshd_config`:
+#      Match User user1
+#         ForceCommand ssh -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+#            -p 22 user1@user1.bore
 #
-# 4. **Add Shared Group to Docker**:
-#    Add the `guestholes` group inside the Docker container for the `bore` user.
+#    Restart SSH:
+#      sudo systemctl restart ssh
 #
-# Gopher Routing Setup:
+# 3. **Run the Containers**:
+#    docker run -d --name user1_bore \
+#      --hostname user1.bore \
+#      --network gopher_net \
+#      -v /var/gopher/guests/user1:/var/gopher \
+#      -e SFTP_USERNAME=user1 \
+#      -e SFTP_PASSWORD=securepassword \
+#      bore:latest
 #
-# 1. **Host Mapping for Docker Containers**:
-#    Assign each container a hostname:
-#      docker run -d --name user1_bore --hostname user1.bore --network gopher_net bore:latest
+# Gopher Routing:
 #
-#    Add host mappings (or configure internal DNS):
+# 1. Host mappings:
+#    Add static host entries (or use DNS):
 #      echo "172.18.0.2 user1.bore" | sudo tee -a /etc/hosts
-#      echo "172.18.0.3 user2.bore" | sudo tee -a /etc/hosts
-#
-# 2. **inetd Configuration**:
-#    Install `inetd` if not already installed:
-#      sudo apt update && sudo apt install -y openbsd-inetd
-#
-#    Create a router script `/usr/local/bin/gopher-router`:
-#      #!/bin/bash
-#      username=$(echo $1 | awk -F'/' '{print $2}' | sed 's/^~//')
-#      selector=$(echo $1 | sed "s|^/~/[^/]*||")
-#      exec docker exec -i ${username}_bore bore serve "${selector:-/}"
-#
-#      chmod +x /usr/local/bin/gopher-router
-#
-#    Add the following to `/etc/inetd.conf`:
-#      70 stream tcp nowait nobody /usr/local/bin/gopher-router gopher-router
-#
-#    Restart `inetd`:
-#      sudo systemctl restart inetd
 #
 # Quotas:
 #
-# - Enable and configure disk quotas for `/sftp`:
+# - Enable and configure disk quotas for `/var/gopher/guests`:
 #    sudo apt install quota
-#    sudo mount -o remount,usrquota /sftp
-#    sudo quotacheck -cug /sftp
-#    sudo quotaon /sftp
+#    sudo mount -o remount,usrquota /var/gopher/guests
+#    sudo quotacheck -cug /var/gopher/guests
+#    sudo quotaon /var/gopher/guests
 #
 # - Set quotas for users:
-#    sudo setquota -u $username 100M 120M 0 0 /sftp
+#    sudo setquota -u user1 100M 120M 0 0 /var/gopher/guests
 #
-# Backups/Restoring:
+# Backups:
 #
 # - Backup all user data:
-#    tar -czf /backups/sftp_data_$(date +%F).tar.gz /sftp
+#    tar -czf /backups/gopher_guests_data_$(date +%F).tar.gz /var/gopher/guests
 #
 # - Backup individual user data:
-#    tar -czf /backups/user1_data_$(date +%F).tar.gz /sftp/user1
-#
-# Restore by untarring to /sftp and reapplying permissions if needed.
-
-
-
-
+#    tar -czf /backups/user1_data_$(date +%F).tar.gz /var/gopher/guests/user1
 
 # Define the pinned version as a build argument
 ARG BORE_VERSION=0.33.0.0
@@ -95,10 +68,11 @@ ARG BORE_VERSION=0.33.0.0
 # Use Debian Slim as the base image
 FROM debian:bullseye-slim
 
-# Install dependencies, convert to merged-/usr, and upgrade libc6
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     git \
+    openssh-server \
     ca-certificates \
     libgmp-dev \
     apt-transport-https \
@@ -110,6 +84,7 @@ RUN git clone --depth=1 https://github.com/someodd/bore.git /tmp/bore \
     && mv /tmp/bore/example/* /var/gopher/source/ \
     && rm -rf /tmp/bore
 
+# FIXME: not using arg for version
 # Install Bore using the specified version
 RUN curl -L -o bore.deb https://github.com/someodd/bore/releases/download/v0.33.0.0/bore_0.33.0.0_amd64_Ubuntu_kernel6.5.0-1025-azure_libc2.35.deb \
     && dpkg -i bore.deb \
@@ -125,13 +100,26 @@ RUN chown -R bore:bore /var/gopher/
 RUN groupadd -g 1001 guestholes && \
     usermod -aG guestholes bore
 
-# Set permissions for Bore directory
-RUN mkdir -p /var/gopher && \
-    chown -R bore:guestholes /var/gopher && \
-    chmod -R 770 /var/gopher
+# Install and configure SSH
+RUN mkdir /var/run/sshd && \
+    echo 'PermitRootLogin no' >> /etc/ssh/sshd_config && \
+    echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config && \
+    echo 'Subsystem sftp internal-sftp' >> /etc/ssh/sshd_config && \
+    echo 'Match User bore' >> /etc/ssh/sshd_config && \
+    echo '    ChrootDirectory /var/gopher' >> /etc/ssh/sshd_config && \
+    echo '    ForceCommand internal-sftp' >> /etc/ssh/sshd_config && \
+    echo '    AllowTcpForwarding no' >> /etc/ssh/sshd_config
 
-# Expose Gopher port
-EXPOSE 7070
+# Accept SFTP username and password as environment variables
+ENV SFTP_USERNAME=user1 SFTP_PASSWORD=password
 
-# Start Bore using watchServe
-CMD ["/usr/local/bin/bore", "watchServe", "--source", "/var/gopher/source", "--output", "/var/gopher/output"]
+# Add SFTP user dynamically at container runtime
+RUN useradd -m -d /var/gopher -s /usr/sbin/nologin $SFTP_USERNAME && \
+    echo "$SFTP_USERNAME:$SFTP_PASSWORD" | chpasswd && \
+    chown -R $SFTP_USERNAME:guestholes /var/gopher
+
+# Expose ports for SSH and Gopher
+EXPOSE 22 7070
+
+# Start SSHD and Bore simultaneously
+CMD service ssh start && /usr/local/bin/bore watchServe --source /var/gopher/source --output /var/gopher/output

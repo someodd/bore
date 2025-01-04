@@ -1,16 +1,6 @@
-# How to use:
+# How to use (although should probably give it the envvars):
 #
 # docker build -t bore:latest .
-#
-# Run containers with something like:
-#
-# docker run -d --name boreguest_user1 \
-#   --hostname boreguest_user1 \
-#   --network gopher_net \
-#   -v /var/gopher/guests/user1:/var/gopher \
-#   -e SFTP_USERNAME=boreguest_user1 \
-#   -e SFTP_PASSWORD=password \
-#   bore:latest
 #
 # Host Setup for SFTP Forwarding:
 #
@@ -40,9 +30,15 @@
 #
 # Gopher Routing:
 #
-# 1. Host mappings:
-#    Add static host entries (or use DNS):
-#      echo "172.18.0.2 user1.bore" | sudo tee -a /etc/hosts
+# ... I don't think I need DNS routing but I will need inetd. Here's an example inetd:
+#
+
+# my inetd config will go here.
+
+#
+# Then:
+#
+# sudo systemctl restart inetd
 #
 # Quotas:
 #
@@ -104,10 +100,10 @@ RUN groupadd -g 1001 guestholes && \
 
 # Install and configure SSH
 RUN mkdir /var/run/sshd && \
+    grep -q "^Subsystem sftp" /etc/ssh/sshd_config || echo 'Subsystem sftp internal-sftp' >> /etc/ssh/sshd_config && \
     echo 'PermitRootLogin no' >> /etc/ssh/sshd_config && \
     echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config && \
-    echo 'Subsystem sftp internal-sftp' >> /etc/ssh/sshd_config && \
-    echo 'Match User bore' >> /etc/ssh/sshd_config && \
+    echo 'Match User boreguest_*' >> /etc/ssh/sshd_config && \
     echo '    ChrootDirectory /var/gopher' >> /etc/ssh/sshd_config && \
     echo '    ForceCommand internal-sftp' >> /etc/ssh/sshd_config && \
     echo '    AllowTcpForwarding no' >> /etc/ssh/sshd_config

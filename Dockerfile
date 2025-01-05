@@ -27,13 +27,6 @@
 #   -e SFTP_PASSWORD=password \
 #   bore:latest
 #
-# 4. Finally make the container hostname resolvable:
-#
-# CONTAINER="boreguest_user1"
-# IP=$(sudo docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$CONTAINER")
-# sudo sed -i "/[[:space:]]$CONTAINER$/d" /etc/hosts && \
-# echo "$IP $CONTAINER" | sudo tee -a /etc/hosts
-#
 # Gopher Routing:
 #
 # You should actually use Dockerfile_inetd for this!

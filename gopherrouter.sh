@@ -28,7 +28,6 @@ process_response() {
         -e "s|\(${target_host}\)\t${port}|\1\t${target_port}|g"
 }
 
-
 ############################################
 # process_boreguest: Extract username from
 # /~/username, then use process_response()
@@ -47,9 +46,6 @@ process_boreguest() {
     if [[ -z "$stripped_selector" ]]; then
         stripped_selector="/"
     fi
-
-    # Debug
-    echo "Debug: forwarding '$stripped_selector' to boreguest_${username}:7071" >&2
 
     # Now call process_response so we can rewrite any embedded links
     # Container = "boreguest_<username>"

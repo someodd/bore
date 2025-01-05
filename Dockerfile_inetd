@@ -1,0 +1,35 @@
+#
+# Minimal inetd container for Gopher routing
+#
+# See: Dockerfile before starting.
+#
+# sudo docker build -f Dockerfile_inetd -t inetd:latest .
+# docker run -d --name inetd \
+#   --hostname inetd \
+#   --network gopher_net \
+#   -p 7777:7777 \
+#   inetd:latest
+#
+# Test with:
+# echo "/~/user1" | nc 172.19.0.3 7777
+#
+# You will also want to point inetd on the host to the inetd container! Here's an example:
+# ...
+# sudo systemctl restart inetd
+FROM alpine:latest
+
+# Install bash (for [[ ]] tests), inetd, and netcat
+RUN apk add --no-cache bash busybox-extras netcat-openbsd
+
+# Copy your gopherrouter script into the container
+COPY gopherrouter.sh /usr/local/bin/gopherrouter.sh
+RUN chmod +x /usr/local/bin/gopherrouter.sh
+
+# Create the inetd config to call gopherrouter.sh on port 7777 (TCP)
+RUN echo "7777 stream tcp nowait root /usr/local/bin/gopherrouter.sh gopherrouter.sh" > /etc/inetd.conf
+
+# Expose Gopher port
+EXPOSE 7777
+
+# Run inetd in the foreground with our config
+CMD ["/usr/sbin/inetd", "-f", "/etc/inetd.conf"]

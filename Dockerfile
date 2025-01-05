@@ -1,4 +1,4 @@
-# How to use (although should probably give it the envvars):
+# How to use (although should probably give it the envvars), also not using volumes yet:
 #
 # docker build -t bore:latest .
 #
@@ -23,24 +23,24 @@
 # docker run -d --name boreguest_user1 \
 #   --hostname boreguest_user1 \
 #   --network gopher_net \
-#   -v /var/gopher/guests/user1:/var/gopher \
 #   -e SFTP_USERNAME=boreguest_user1 \
 #   -e SFTP_PASSWORD=password \
 #   bore:latest
 #
+# 4. Finally make the container hostname resolvable:
+#
+# CONTAINER="boreguest_user1"
+# IP=$(sudo docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$CONTAINER")
+# sudo sed -i "/[[:space:]]$CONTAINER$/d" /etc/hosts && \
+# echo "$IP $CONTAINER" | sudo tee -a /etc/hosts
+#
 # Gopher Routing:
 #
-# ... I don't think I need DNS routing but I will need inetd. Here's an example inetd:
-#
-
-# my inetd config will go here.
-
-#
-# Then:
-#
-# sudo systemctl restart inetd
+# You should actually use Dockerfile_inetd for this!
 #
 # Quotas:
+#
+# You'll need to use volumes.
 #
 # - Enable and configure disk quotas for `/var/gopher/guests`:
 #    sudo apt install quota
@@ -61,10 +61,20 @@
 
 
 # Use Debian Slim as the base image
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 # Define the pinned version
 ENV BORE_VERSION=0.33.0.0
+
+#RUN mkdir -p /var/gopher/source /var/gopher/output
+
+# if i don't do this hgetfilecontents or whatever will fail
+# Ensure locale is set to UTF-8
+RUN apt-get update && apt-get install -y locales
+RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+RUN locale-gen
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -89,7 +99,7 @@ RUN curl -L -o bore.deb https://github.com/someodd/bore/releases/download/v${BOR
     && rm bore.deb
 
 # Configure Bore
-RUN echo 'user = "bore"' >> /var/gopher/source/bore.toml
+#RUN echo 'user = "bore"' >> /var/gopher/source/bore.toml
 
 # Set permissions
 RUN chown -R bore:bore /var/gopher/
@@ -99,8 +109,8 @@ RUN groupadd -g 1001 guestholes && \
     usermod -aG guestholes bore
 
 # Install and configure SSH
+# Install and configure SSH
 RUN mkdir /var/run/sshd && \
-    grep -q "^Subsystem sftp" /etc/ssh/sshd_config || echo 'Subsystem sftp internal-sftp' >> /etc/ssh/sshd_config && \
     echo 'PermitRootLogin no' >> /etc/ssh/sshd_config && \
     echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config && \
     echo 'Match User boreguest_*' >> /etc/ssh/sshd_config && \
@@ -117,7 +127,7 @@ RUN useradd -m -d /var/gopher -s /usr/sbin/nologin $SFTP_USERNAME && \
     chown -R $SFTP_USERNAME:guestholes /var/gopher
 
 # Expose ports for SSH and Gopher
-EXPOSE 22 7070
+EXPOSE 22 7071
 
 # Start SSHD and Bore simultaneously
 CMD service ssh start && /usr/local/bin/bore watchServe --source /var/gopher/source --output /var/gopher/output

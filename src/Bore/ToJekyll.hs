@@ -78,13 +78,14 @@ makeJekyllFilename relativePath fm =
 renderJekyllPost :: ServerConfig -> Text.Text -> Text.Text -> Text.Text
 renderJekyllPost config frontMatter body = do
     let
-        uri = "gopher://" <> config.hostname <> ":" <> Text.pack (show config.listenPort) <> "/" <> Text.pack phlogDirectory
+        port = fromMaybe 70 (config.listenPort)
+        uri = "gopher://" <> config.hostname <> ":" <> Text.pack (show port) <> "/" <> Text.pack phlogDirectory
     Text.unlines
         [ "---"
         , frontMatter
         , "---"
-        , "Original content in gopherspace: " <> uri
         , body
+        , "Original content in gopherspace: " <> uri
         ]
 
 -- | Process all files in the source directory.

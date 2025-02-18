@@ -5,6 +5,14 @@ user in the changelog.
 
 ## [Unreleased]
 
+### Changed
+
+* for archiving to jekyll (phlog), put "original content" link at bottom of post instead
+
+### Fixed
+
+* URI for the "original content in gopherspace" for porting to jekyll
+
 ## [0.34.0.0] - 2025-02-17
 
 ### Added

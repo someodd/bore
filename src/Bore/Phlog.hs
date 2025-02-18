@@ -1,3 +1,4 @@
+-- FIXME: skip if draft
 -- FIXME: the duplication of having to figure out the tag paths over and over is bad and
 -- leads to errors.
 {- | Construct phlog indexes.
@@ -261,7 +262,8 @@ phlogIndexLinks hostname port tagLinks mainIndexLink feedLink =
 buildPhlogIndexes :: Text.Text -> Int -> FilePath -> [PhlogMeta] -> IO ()
 buildPhlogIndexes hostname port outputPath phlogMeta = do
     let
-        sortedPhlogMeta = sortPhlogMetaByDate phlogMeta
+        noDrafts = filter (\(_, _, frontMatter) -> not (fromMaybe False (frontMatter.draft))) phlogMeta
+        sortedPhlogMeta = sortPhlogMetaByDate noDrafts
         unreliableTagPaths = unreliablyGetTagIndexPaths sortedPhlogMeta
         mainPhlogIndexPath = "/" </> phlogDirectory
         phlogFeedPath = "/" </> phlogDirectory </> phlogFeedName

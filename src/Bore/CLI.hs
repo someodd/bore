@@ -1,7 +1,3 @@
-{- | Entrypoints for the CLI.
-
--}
-
 module Bore.CLI (defaultEntryPoint) where
 
 import Bore.FileLayout
@@ -9,6 +5,7 @@ import Bore.Library
 import Bore.Parse (buildTree)
 import Bore.Config
 import Bore.SpacecookieClone.Serve (runServerWithConfig)
+import qualified Bore.ToJekyll as ToJekyll (buildTree)
 
 import System.Directory (canonicalizePath)
 import System.FSNotify
@@ -53,13 +50,14 @@ watchServe absoluteSourcePath absoluteOutputPath = do
           putStrLn "Change detected, about to rebuild..."
           buildTree absoluteSourcePath absoluteOutputPath)
     -- Keep the watcher alive
-    --changeWorkingDirectory projectRootPath
     library <- loadOnce absoluteSourcePath
-    -- modify the config to use the output directory as the root. this could just be the config value if it was not overridden in the cli
     runServerWithConfig library.config.server absoluteSourcePath absoluteOutputPath
     forever $ threadDelay 1000000
 
-data Command = WatchServe (Maybe FilePath) (Maybe FilePath) | Build (Maybe FilePath) (Maybe FilePath)
+data Command = 
+    WatchServe (Maybe FilePath) (Maybe FilePath) 
+  | Build (Maybe FilePath) (Maybe FilePath)
+  | Jekyll (Maybe FilePath) (Maybe FilePath)
 
 commandParser :: Parser Command
 commandParser = subparser
@@ -69,6 +67,9 @@ commandParser = subparser
  <> command "build" (info (buildParser <**> helper)
       ( fullDesc
      <> progDesc "Build the output directory from the source directory" ))
+ <> command "jekyll" (info (jekyllParser <**> helper)
+      ( fullDesc
+     <> progDesc "Generate Jekyll-compatible posts from the source directory" ))
   )
 
 watchServeParser :: Parser Command
@@ -93,6 +94,17 @@ buildParser = Build
      <> metavar "OUTPUT_DIR"
      <> help "Output directory" ))
 
+jekyllParser :: Parser Command
+jekyllParser = Jekyll
+  <$> optional (strOption
+      ( long "source"
+     <> metavar "SOURCE_DIR"
+     <> help "Source directory" ))
+  <*> optional (strOption
+      ( long "output"
+     <> metavar "OUTPUT_DIR"
+     <> help "Output directory for _posts" ))
+
 defaultEntryPoint :: IO ()
 defaultEntryPoint = do
   command' <- execParser opts
@@ -103,6 +115,10 @@ defaultEntryPoint = do
     Build maybeSourcePath maybeOutputPath -> do
       (absoluteSourcePath, absoluteOutputPath) <- determineDirectories maybeSourcePath maybeOutputPath
       buildTree absoluteSourcePath absoluteOutputPath
+    Jekyll maybeSourcePath maybeOutputPath -> do
+      (absoluteSourcePath, absoluteOutputPath) <- determineDirectories maybeSourcePath maybeOutputPath
+      library <- loadOnce absoluteSourcePath
+      ToJekyll.buildTree library.config.server absoluteSourcePath absoluteOutputPath
   where
     opts = info (commandParser <**> helper)
       ( fullDesc

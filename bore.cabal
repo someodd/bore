@@ -45,6 +45,7 @@ library
       Bore.Text.Template
       Bore.Text.Template.Replacements
       Bore.Text.Wrap
+      Bore.ToJekyll
       Bore.Utils
   other-modules:
       Paths_bore

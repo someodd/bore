@@ -1,4 +1,3 @@
-
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DeriveDataTypeable #-}
@@ -14,7 +13,7 @@ module Bore.FrontMatter
     ) where
 
 import GHC.Generics (Generic)
-import Data.Aeson (ToJSON)
+import Data.Aeson (ToJSON, Value(..))
 import Text.Mustache (ToMustache(..))
 import qualified Text.Mustache.Types as MType
 import qualified Data.Text as Text
@@ -39,10 +38,14 @@ data FrontMatter = FrontMatter {
     parent :: Maybe Text.Text,
     -- ^ If this is set, then the document will be rendered as a partial/child of the
     -- defined parent.
-    variables :: Maybe (Map.Map Text.Text Text.Text)
+    variables :: Maybe (Map.Map Text.Text Text.Text),
+    -- ^ Variables to use within templates.
+    skipJekyll :: Maybe Bool,
+    -- ^ Indicates that this file should be skipped when generating Jekyll output.
+    jekyll :: Maybe Value
+    -- ^ Arbitrary data/object for Jekyll.
     } deriving (Show, Data, Typeable, Generic, FromJSON)
 
--- FIXME: I hate this.
 -- | A function to merge two FrontMatter records, with the second one taking precedence.
 updateFrontMatter :: FrontMatter -> FrontMatter -> FrontMatter
 updateFrontMatter base FrontMatter{..} = base
@@ -56,6 +59,7 @@ updateFrontMatter base FrontMatter{..} = base
   , gophermap = base.gophermap <|> gophermap
   , parent = base.parent <|> parent
   , variables = base.variables <|> variables
+  , jekyll = base.jekyll <|> jekyll
   }
 
 -- Automatically derive ToJSON for FrontMatter

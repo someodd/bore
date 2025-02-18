@@ -5,6 +5,13 @@ user in the changelog.
 
 ## [Unreleased]
 
+## [0.34.0.0] - 2025-02-17
+
+### Added
+
+* `draft` rule is now adhered to for skipping phlog posts in certain contexts
+* command to archive phlog posts to jekyll format
+
 ## [0.29.0.0] - 2024-12-30
 
 ### Changed
@@ -216,7 +223,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.29.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.34.0.0...HEAD
+[0.34.0.0]: https://github.com/someodd/bore/compare/v0.33.0.0...v0.34.0.0
 [0.29.0.0]: https://github.com/someodd/bore/compare/v0.28.0.0...v0.29.0.0
 [0.28.0.0]: https://github.com/someodd/bore/compare/v0.27.0.0...v0.28.0.0
 [0.27.0.0]: https://github.com/someodd/bore/compare/v0.26.0.0...v0.27.0.0

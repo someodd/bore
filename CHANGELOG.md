@@ -5,6 +5,8 @@ user in the changelog.
 
 ## [Unreleased]
 
+## [0.35.0.0] - 2025-02-17
+
 ### Changed
 
 * for archiving to jekyll (phlog), put "original content" link at bottom of post instead
@@ -231,7 +233,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.34.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.35.0.0...HEAD
+[0.35.0.0]: https://github.com/someodd/bore/compare/v0.34.0.0...v0.35.0.0
 [0.34.0.0]: https://github.com/someodd/bore/compare/v0.33.0.0...v0.34.0.0
 [0.29.0.0]: https://github.com/someodd/bore/compare/v0.28.0.0...v0.29.0.0
 [0.28.0.0]: https://github.com/someodd/bore/compare/v0.27.0.0...v0.28.0.0

@@ -7,6 +7,7 @@ import Bore.Config
 import Bore.SpacecookieClone.Serve (runServerWithConfig)
 import qualified Bore.ToJekyll as ToJekyll (buildTree)
 
+import Data.Text (pack)
 import System.Directory (canonicalizePath)
 import System.FSNotify
 import Control.Concurrent (threadDelay)
@@ -17,7 +18,6 @@ import Options.Applicative
 
 Takes two Maybe FilePaths and returns the source and output directories based on defaults
 and canonicalizes them.
-
 -}
 determineDirectories :: Maybe FilePath -> Maybe FilePath -> IO (AbsolutePath, AbsolutePath)
 determineDirectories maybeSourcePath maybeOutputPath = do
@@ -31,7 +31,6 @@ determineDirectories maybeSourcePath maybeOutputPath = do
 
 {- | Serve the gopherhole, if there are any changes to the children of the "source path"
 then rebuild the gopherhole.
-
 -}
 watchServe :: AbsolutePath -> AbsolutePath -> IO ()
 watchServe absoluteSourcePath absoluteOutputPath = do
@@ -57,7 +56,7 @@ watchServe absoluteSourcePath absoluteOutputPath = do
 data Command = 
     WatchServe (Maybe FilePath) (Maybe FilePath) 
   | Build (Maybe FilePath) (Maybe FilePath)
-  | Jekyll (Maybe FilePath) (Maybe FilePath)
+  | Jekyll (Maybe FilePath) (Maybe FilePath) (Maybe String)
 
 commandParser :: Parser Command
 commandParser = subparser
@@ -104,6 +103,10 @@ jekyllParser = Jekyll
       ( long "output"
      <> metavar "OUTPUT_DIR"
      <> help "Output directory for _posts" ))
+  <*> optional (strOption
+      ( long "after"
+     <> metavar "DATE"
+     <> help "Only process posts after the given date" ))
 
 defaultEntryPoint :: IO ()
 defaultEntryPoint = do
@@ -115,10 +118,10 @@ defaultEntryPoint = do
     Build maybeSourcePath maybeOutputPath -> do
       (absoluteSourcePath, absoluteOutputPath) <- determineDirectories maybeSourcePath maybeOutputPath
       buildTree absoluteSourcePath absoluteOutputPath
-    Jekyll maybeSourcePath maybeOutputPath -> do
+    Jekyll maybeSourcePath maybeOutputPath maybeAfter -> do
       (absoluteSourcePath, absoluteOutputPath) <- determineDirectories maybeSourcePath maybeOutputPath
       library <- loadOnce absoluteSourcePath
-      ToJekyll.buildTree library.config.server absoluteSourcePath absoluteOutputPath
+      ToJekyll.buildTree library.config.server absoluteSourcePath absoluteOutputPath (pack <$> maybeAfter)
   where
     opts = info (commandParser <**> helper)
       ( fullDesc

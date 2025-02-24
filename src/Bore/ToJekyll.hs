@@ -10,6 +10,7 @@ import Bore.Config (ServerConfig(..))
 import Bore.FileLayout (phlogDirectory)
 import Bore.Text.Gophermap (gopherFileTypes)
 
+import Data.Dates.Parsing (parseDate, defaultConfig, DateTime)
 import qualified Data.Text.IO as TextIO
 import qualified Data.Text as Text
 import qualified Data.Yaml as Yaml
@@ -115,25 +116,41 @@ replaceGophermapLinks overridePort config input =
   in Text.unlines (go False (Text.lines input))
 
 -- | Parse a file into a Jekyll-compatible blog post.
-parseToJekyll :: ServerConfig -> FilePath -> FilePath -> FilePath -> IO ()
-parseToJekyll config sourceDir destDir filePath = do
+parseToJekyll :: ServerConfig -> FilePath -> FilePath -> FilePath -> Maybe Text.Text -> IO ()
+parseToJekyll config sourceDir destDir filePath maybeAfter = do
     content <- TextIO.readFile filePath
     let relativePath = makeRelative sourceDir filePath
         frontMatterAndRest = parseFrontMatterIgnoreErrors content
-
+    -- Define a reference date for parsing, here we use the epoch.
+    let refDate = read "1970-01-01 00:00:00" :: DateTime
+        parseWithDefault s = either (const Nothing) Just (parseDate (defaultConfig refDate) s)
     case frontMatterAndRest of
         Just (frontMatter, body) -> do
             if shouldSkipJekyll frontMatter || fromMaybe False (draft frontMatter)
                 then putStrLn $ "Skipping file (skipJekyll or draft is True): " ++ filePath
                 else do
-                    let fmMap = prepareJekyllFrontMatter frontMatter
-                        filename = makeJekyllFilename relativePath fmMap
-                        outputPath = combine destDir filename
-                        frontMatterYaml = Text.decodeUtf8 . Yaml.encode . Object $ fmMap
-                        finalContent = renderJekyllPost config frontMatterYaml body
-                    createDirectoryIfMissing True destDir
-                    TextIO.writeFile outputPath finalContent
+                  case maybeAfter of
+                    Just afterText ->
+                      let maybeAfterDate = parseWithDefault (Text.unpack afterText)
+                          maybeFmDate = date frontMatter >>= (\d -> parseWithDefault (Text.unpack d))
+                      in case (maybeAfterDate, maybeFmDate) of
+                           (Just afterDate, Just fmDate) ->
+                             if fmDate > afterDate
+                               then processFile
+                               else putStrLn $ "Skipping file (date is not after " ++ Text.unpack afterText ++ "): " ++ filePath
+                           _ -> putStrLn $ "Skipping file (unable to parse dates): " ++ filePath
+                    Nothing -> processFile
+          where
+            processFile = do
+              let fmMap = prepareJekyllFrontMatter frontMatter
+                  filename = makeJekyllFilename relativePath fmMap
+                  outputPath = combine destDir filename
+                  frontMatterYaml = Text.decodeUtf8 . Yaml.encode . Object $ fmMap
+                  finalContent = renderJekyllPost config frontMatterYaml body
+              createDirectoryIfMissing True destDir
+              TextIO.writeFile outputPath finalContent
         Nothing -> putStrLn $ "Skipping file (no valid frontmatter): " ++ filePath
+
 
 -- | Check if the file should be skipped for Jekyll output.
 shouldSkipJekyll :: FrontMatter -> Bool
@@ -183,21 +200,21 @@ renderJekyllPost config frontMatter body = do
         ]
 
 -- | Process all files in the source directory.
-processFiles :: ServerConfig -> FilePath -> FilePath -> [FilePath] -> IO ()
-processFiles config sourceDir destDir files = do
+processFiles :: ServerConfig -> FilePath -> FilePath -> [FilePath] -> Maybe Text.Text -> IO ()
+processFiles config sourceDir destDir files maybeAfter = do
     forM_ files $ \file -> do
         isDir <- doesDirectoryExist file
         if not isDir && takeExtension file `elem` [".txt", ".md"]
-            then parseToJekyll config sourceDir destDir file
+            then parseToJekyll config sourceDir destDir file maybeAfter
             else putStrLn $ "Skipping directory or unsupported file: " ++ file
 
 -- | Main function to build the Jekyll-compatible blog.
-buildTree :: ServerConfig -> FilePath -> FilePath -> IO ()
-buildTree config sourceDir destDir = do
+buildTree :: ServerConfig -> FilePath -> FilePath -> Maybe Text.Text -> IO ()
+buildTree config sourceDir destDir maybeAfter = do
     sourceDirAbs <- canonicalizePath (sourceDir </> phlogDirectory)
     destDirAbs <- canonicalizePath (combine destDir "_posts")
     files <- listDirectoryRecursive sourceDirAbs
-    processFiles config sourceDirAbs destDirAbs files
+    processFiles config sourceDirAbs destDirAbs files maybeAfter
 
 -- | Recursively list all files in a directory.
 listDirectoryRecursive :: FilePath -> IO [FilePath]

@@ -5,6 +5,13 @@ user in the changelog.
 
 ## [Unreleased]
 
+## [0.37.0.0] - 2025-02-24
+
+### Added
+
+* for archiving jekyll (phlog), add `--after`, so only posts
+  with a newer date will be archived
+
 ## [0.36.0.0] - 2025-02-24
 
 ### Added
@@ -239,7 +246,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.36.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.37.0.0...HEAD
+[0.37.0.0]: https://github.com/someodd/bore/compare/v0.36.0.0...v0.37.0.0
 [0.36.0.0]: https://github.com/someodd/bore/compare/v0.35.0.0...v0.36.0.0
 [0.35.0.0]: https://github.com/someodd/bore/compare/v0.34.0.0...v0.35.0.0
 [0.34.0.0]: https://github.com/someodd/bore/compare/v0.33.0.0...v0.34.0.0

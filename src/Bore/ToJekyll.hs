@@ -8,6 +8,7 @@ module Bore.ToJekyll (buildTree) where
 import Bore.FrontMatter
 import Bore.Config (ServerConfig(..))
 import Bore.FileLayout (phlogDirectory)
+import Bore.Text.Gophermap (gopherFileTypes)
 
 import qualified Data.Text.IO as TextIO
 import qualified Data.Text as Text
@@ -23,6 +24,95 @@ import qualified Data.Aeson.KeyMap as Map
 import qualified Data.Text.Encoding as Text
 import qualified Data.Vector as V
 import Data.Aeson.Key (fromText)
+import Text.Regex.TDFA.Text ()
+import Text.Regex.TDFA ((=~))
+
+{-| Detect and replace Gophermap links with Markdown links.
+
+This also detects the bucktooth shorthand gophermap links.
+
+Performs a simple regex find and replace. Searches for an entire line which begins with a
+character from `gopherFileTypes` and contains some text, and then a tab and then a path
+(for a relative path [assume the host/port passed]), but if there's more than one tab then
+it will expect the host and port according to gopher spec.
+
+This also avoids detection that may occur inside of code blocks.
+-}
+replaceGophermapLinks :: Bool -> ServerConfig -> Text.Text -> Text.Text
+replaceGophermapLinks overridePort config input =
+  let
+    hostForRelativeLinks = hostname config
+    portForRelativeLinks = if overridePort then 70 else fromMaybe 70 (listenPort config)
+    -- For full gophermap lines:
+    --   Group1: file type
+    --   Group2: display text (everything up to a tab)
+    --   Group3: selector (must be non-tab characters)
+    --   Group4: optional entire host/port part (unused)
+    --   Group5: host (if provided)
+    --   Group6: port (if provided)
+    pattern1 :: Text.Text
+    pattern1 = "^([" <> Text.pack gopherFileTypes <> "])([^\t]*)\t([^\t]+)(\t([^\t]+)\t([^\t]+))?"
+    -- For bucktooth shorthand:
+    --   Group1: file type (immediately after '>')
+    --   Group2: display text
+    --   Group3: selector
+    --   Group4: optional entire host/port part (unused)
+    --   Group5: host (if provided)
+    --   Group6: port (if provided)
+    pattern2 :: Text.Text
+    pattern2 = "^>(.)([^\t]*)\t([^\t]+)(\t([^\t]+)\t([^\t]+))?"
+
+    -- Build the URI using the file type as the first directory.
+    buildURI fileType selector host port =
+      let sep = if Text.isPrefixOf "/" selector then "" else "/"
+      in Text.concat ["gopher://", host, ":", port, "/", fileType, sep, selector]
+
+    processPattern1 groups =
+      let fileType    = groups !! 0
+          displayText = groups !! 1
+          selector    = groups !! 2
+          host        = if length groups > 4 && not (Text.null (groups !! 4))
+                          then groups !! 4
+                          else hostForRelativeLinks
+          port        = if length groups > 5 && not (Text.null (groups !! 5))
+                          then groups !! 5
+                          else Text.pack (show portForRelativeLinks)
+          url         = buildURI fileType selector host port
+      in Text.concat ["[", displayText, "](", url, ")"]
+
+    processPattern2 groups =
+      let fileType    = groups !! 0
+          displayText = groups !! 1
+          selector    = groups !! 2
+          host        = if length groups > 4 && not (Text.null (groups !! 4))
+                          then groups !! 4
+                          else hostForRelativeLinks
+          port        = if length groups > 5 && not (Text.null (groups !! 5))
+                          then groups !! 5
+                          else Text.pack (show portForRelativeLinks)
+          url         = buildURI fileType selector host port
+      in Text.concat ["[", displayText, "](", url, ")"]
+
+    replaceLine line =
+      let (_ :: Text.Text, matched1 :: Text.Text, _ :: Text.Text, groups1 :: [Text.Text]) = line =~ pattern1
+      in if not (Text.null matched1)
+           then processPattern1 groups1
+           else let (_ :: Text.Text, matched2 :: Text.Text, _ :: Text.Text, groups2 :: [Text.Text]) = line =~ pattern2
+                in if not (Text.null matched2)
+                     then processPattern2 groups2
+                     else line
+
+    -- Determines if a line starts a code fence.
+    isFence line = "```" `Text.isPrefixOf` Text.strip line
+
+    -- Process lines while tracking whether we're inside a code block.
+    go _ [] = []
+    go inCodeBlock (l:ls)
+      | isFence l = l : go (not inCodeBlock) ls
+      | inCodeBlock = l : go inCodeBlock ls
+      | otherwise = replaceLine l : go inCodeBlock ls
+
+  in Text.unlines (go False (Text.lines input))
 
 -- | Parse a file into a Jekyll-compatible blog post.
 parseToJekyll :: ServerConfig -> FilePath -> FilePath -> FilePath -> IO ()
@@ -84,7 +174,11 @@ renderJekyllPost config frontMatter body = do
         [ "---"
         , frontMatter
         , "---"
-        , body
+        -- FIXME: the True here is a hack to set the relative links to port 70 for now,
+        -- because I have no way of overriding relative link paths with a setting in case
+        -- the port listened on and the actual port we want for internal gophermap links
+        -- differs (like if I use a reverse proxy)
+        , replaceGophermapLinks True config body
         , "Original content in gopherspace: " <> uri
         ]
 

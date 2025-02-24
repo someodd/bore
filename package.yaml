@@ -72,6 +72,7 @@ dependencies:
   - edit-distance
   - safe
   - mime-types
+  - regex-tdfa
 
 library:
   source-dirs: src

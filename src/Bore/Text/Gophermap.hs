@@ -16,7 +16,7 @@ specification)
 
 -}
 
-module Bore.Text.Gophermap (toGophermap, imagePathToGopherType, gopherTypeByExt) where
+module Bore.Text.Gophermap (toGophermap, imagePathToGopherType, gopherTypeByExt, gopherFileTypes) where
 
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -59,6 +59,15 @@ gopherTypeByExt defaultType filePath
   | otherwise =
     mimeToGopherType $ mimeByExt defaultMimeMap defaultType (T.pack $ "." ++ takeExtension filePath)
 
+-- Determine if a line is a menu entry based on the first character.
+isMenuEntry :: Text -> Bool
+isMenuEntry t = not (T.null t) && T.head t `elem` gopherFileTypes && "\t" `T.isInfixOf` t
+
+-- Gopher file types as per RFC1436 and spacecookie. Also include 'h' for HTTP. May
+-- have to be expanded in future. Potential for complications.
+gopherFileTypes :: [Char]
+gopherFileTypes = "0123456789+gITih"
+
 {- | Transform a regular text file into a Gopher menu.
 
 -}
@@ -74,15 +83,6 @@ toGophermap domain port inputText = (T.unlines . map processLine . T.lines $ inp
       | not (isMenuEntry line) = T.intercalate "\t" ["i" <> if T.null line then " " else line, "/", domain, textPort]
       -- Menu entry: ensure the last fields (domain and port) are present.
       | otherwise = addDomainAndPort line
-
-    -- Determine if a line is a menu entry based on the first character.
-    isMenuEntry :: Text -> Bool
-    isMenuEntry t = not (T.null t) && T.head t `elem` gopherFileTypes && "\t" `T.isInfixOf` t
-
-    -- Gopher file types as per RFC1436 and spacecookie. Also include 'h' for HTTP. May
-    -- have to be expanded in future. Potential for complications.
-    gopherFileTypes :: [Char]
-    gopherFileTypes = "0123456789+gITih"
 
     -- Add domain and port if they're missing from the line.
     addDomainAndPort :: Text -> Text

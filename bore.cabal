@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           bore
-version:        0.36.0.0
+version:        0.37.0.0
 synopsis:       Build gopherholes.
 description:    Static site builder, but for gopherholes. Manage phlogs with tags, use the Markdown renderer and Mustache templating system.
 category:       Network
@@ -92,6 +92,7 @@ library
     , parsec
     , prettyprinter
     , raw-strings-qq
+    , regex-compat
     , regex-tdfa
     , safe
     , socket
@@ -157,6 +158,7 @@ executable bore
     , parsec
     , prettyprinter
     , raw-strings-qq
+    , regex-compat
     , regex-tdfa
     , safe
     , socket
@@ -220,6 +222,7 @@ test-suite bore-test
     , parsec
     , prettyprinter
     , raw-strings-qq
+    , regex-compat
     , regex-tdfa
     , safe
     , socket

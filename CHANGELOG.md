@@ -5,6 +5,10 @@ user in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+* for archiving jekyll (phlog), copy over any referenced assets with special rules
+
 ## [0.37.0.0] - 2025-02-24
 
 ### Added

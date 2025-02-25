@@ -5,6 +5,8 @@ user in the changelog.
 
 ## [Unreleased]
 
+## [0.38.0.0] - 2025-02-24
+
 ### Added
 
 * for archiving jekyll (phlog), copy over any referenced assets with special rules
@@ -250,7 +252,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.37.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.38.0.0...HEAD
+[0.38.0.0]: https://github.com/someodd/bore/compare/v0.37.0.0...v0.38.0.0
 [0.37.0.0]: https://github.com/someodd/bore/compare/v0.36.0.0...v0.37.0.0
 [0.36.0.0]: https://github.com/someodd/bore/compare/v0.35.0.0...v0.36.0.0
 [0.35.0.0]: https://github.com/someodd/bore/compare/v0.34.0.0...v0.35.0.0

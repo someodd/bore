@@ -5,6 +5,8 @@ user in the changelog.
 
 ## [Unreleased]
 
+## [0.39.0.0] - 2025-03-02
+
 ### Fixed
 
 * for archiving jekyll (phlog), fix/add actual links to original phlog post
@@ -256,7 +258,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.38.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.39.0.0...HEAD
+[0.39.0.0]: https://github.com/someodd/bore/compare/v0.38.0.0...v0.39.0.0
 [0.38.0.0]: https://github.com/someodd/bore/compare/v0.37.0.0...v0.38.0.0
 [0.37.0.0]: https://github.com/someodd/bore/compare/v0.36.0.0...v0.37.0.0
 [0.36.0.0]: https://github.com/someodd/bore/compare/v0.35.0.0...v0.36.0.0

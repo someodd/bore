@@ -212,7 +212,7 @@ parseToJekyll config sourceDir postSourceDir destDir postDestDirRelative filePat
                   filename = makeJekyllFilename relativePath fmMap
                   outputPath = combine (destDir </> postDestDirRelative) filename
                   frontMatterYaml = Text.decodeUtf8 . Yaml.encode . Object $ fmMap
-                  finalContent = renderJekyllPost config frontMatterYaml body
+                  finalContent = renderJekyllPost (takeBaseName relativePath) config frontMatter frontMatterYaml body
               createDirectoryIfMissing True destDir
               TextIO.writeFile outputPath finalContent
         Nothing -> putStrLn $ "Skipping file (no valid frontmatter): " ++ filePath
@@ -248,21 +248,23 @@ makeJekyllFilename relativePath fm =
     in fmDate ++ "-" ++ sanitizedTitle ++ ".md"
 
 -- | Render the final Jekyll post with frontmatter and body.
-renderJekyllPost :: ServerConfig -> Text.Text -> Text.Text -> Text.Text
-renderJekyllPost config frontMatter body = do
+renderJekyllPost :: FilePath -> ServerConfig -> FrontMatter -> Text.Text -> Text.Text -> Text.Text
+renderJekyllPost postFileName config frontMatter frontMatterText body = do
     let
-        port = fromMaybe 70 (config.listenPort)
-        uri = "gopher://" <> config.hostname <> ":" <> Text.pack (show port) <> "/" <> Text.pack phlogDirectory
+        overridePort = True  -- Making room for a future update where this is more controllable. also matches the regex link replacing action
+        port = if overridePort then 70 else fromMaybe 70 config.listenPort
+        number = if fromMaybe False frontMatter.gophermap then "1" else "0"
+        uri = "gopher://" <> config.hostname <> ":" <> Text.pack (show port) <> "/" <> number <> "/" <> Text.pack phlogDirectory <> Text.pack postFileName <> ".txt"
     Text.unlines
         [ "---"
-        , frontMatter
+        , frontMatterText
         , "---"
         -- FIXME: the True here is a hack to set the relative links to port 70 for now,
         -- because I have no way of overriding relative link paths with a setting in case
         -- the port listened on and the actual port we want for internal gophermap links
         -- differs (like if I use a reverse proxy)
-        , replaceGophermapLinks True config body
-        , "Original content in gopherspace: " <> uri
+        , replaceGophermapLinks overridePort config body
+        , "Original content in gopherspace: [" <> uri <> "](" <> uri <> ")"
         ]
 
 -- | Process all files in the source directory.

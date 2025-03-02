@@ -5,6 +5,10 @@ user in the changelog.
 
 ## [Unreleased]
 
+### Fixed
+
+* for archiving jekyll (phlog), fix/add actual links to original phlog post
+
 ## [0.38.0.0] - 2025-02-24
 
 ### Added

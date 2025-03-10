@@ -5,6 +5,13 @@ user in the changelog.
 
 ## [Unreleased]
 
+## [0.40.0.0] - 2025-03-09
+
+### Added
+
+* `--dev-mode` for building/testing locally. this will override the hostname (localhost)
+  and user (don't switch)
+
 ## [0.39.0.0] - 2025-03-02
 
 ### Fixed
@@ -258,7 +265,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.39.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.40.0.0...HEAD
+[0.40.0.0]: https://github.com/someodd/bore/compare/v0.39.0.0...v0.40.0.0
 [0.39.0.0]: https://github.com/someodd/bore/compare/v0.38.0.0...v0.39.0.0
 [0.38.0.0]: https://github.com/someodd/bore/compare/v0.37.0.0...v0.38.0.0
 [0.37.0.0]: https://github.com/someodd/bore/compare/v0.36.0.0...v0.37.0.0

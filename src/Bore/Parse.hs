@@ -41,7 +41,7 @@ build directory: where everything gets outputted to.
 -}
 
 -- NOW ADD ALL THE TESTS.
-module Bore.Parse (buildTree) where
+module Bore.Parse (buildTree, applyDevMode) where
 
 import Bore.FrontMatter
 import Bore.Text.Template
@@ -189,19 +189,28 @@ handleAllFiles :: Library -> FilePath -> FilePath -> [FilePath] -> IO [(FilePath
 handleAllFiles library projectDirectoryAbsolutePath outputDirectoryAbsolutePath filesToCopy =
     catMaybes <$> mapM (handleFile library projectDirectoryAbsolutePath outputDirectoryAbsolutePath) filesToCopy
 
+
+-- | Apply development mode settings to a config if needed
+applyDevMode :: Config -> Bool -> Config
+applyDevMode config True = 
+  config { server = (server config) { hostname = Text.pack "localhost", user = Nothing } }
+applyDevMode config False = config
+
 {- | Main entrypoint to build the entire gopherhole project.
 
 The file paths can be absolute or relative, they will be made absolute.
 
 -}
-buildTree :: FilePath -> FilePath -> IO ()
-buildTree sourceDirectory outputDirectory = do
+buildTree :: FilePath -> FilePath -> Bool-> IO ()
+buildTree sourceDirectory outputDirectory devMode = do
     sourceDirectoryAbsolutePath <- canonicalizePath sourceDirectory
     outputDirectoryAbsolutePath <- canonicalizePath outputDirectory
 
     _ <- resetOutputDirectory outputDirectoryAbsolutePath
 
-    library <- loadOnce sourceDirectoryAbsolutePath
+    libraryBeforeCheck <- loadOnce sourceDirectoryAbsolutePath
+    -- apply applyDevMode to the config in library
+    let library = libraryBeforeCheck { config = applyDevMode (config libraryBeforeCheck) devMode }
 
     -- Get all the files in the project directory, recursively
     absoluteIgnorePaths <- canonIgnorePaths sourceDirectoryAbsolutePath ignorePaths

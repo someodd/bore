@@ -2,7 +2,7 @@ module Bore.CLI (defaultEntryPoint) where
 
 import Bore.FileLayout
 import Bore.Library
-import Bore.Parse (buildTree)
+import Bore.Parse (buildTree, applyDevMode)
 import Bore.Config
 import Bore.SpacecookieClone.Serve (runServerWithConfig)
 import qualified Bore.ToJekyll as ToJekyll (buildTree)
@@ -32,10 +32,10 @@ determineDirectories maybeSourcePath maybeOutputPath = do
 {- | Serve the gopherhole, if there are any changes to the children of the "source path"
 then rebuild the gopherhole.
 -}
-watchServe :: AbsolutePath -> AbsolutePath -> IO ()
-watchServe absoluteSourcePath absoluteOutputPath = do
+watchServe :: AbsolutePath -> AbsolutePath -> Bool -> IO ()
+watchServe absoluteSourcePath absoluteOutputPath devMode = do
   putStrLn "Building first..."
-  buildTree absoluteSourcePath absoluteOutputPath
+  buildTree absoluteSourcePath absoluteOutputPath devMode
 
   putStrLn $ "Starting server and watching for changes in source: " ++ absoluteSourcePath
 
@@ -47,15 +47,16 @@ watchServe absoluteSourcePath absoluteOutputPath = do
       (const True) -- Watch all changes
       (\_ -> do
           putStrLn "Change detected, about to rebuild..."
-          buildTree absoluteSourcePath absoluteOutputPath)
+          buildTree absoluteSourcePath absoluteOutputPath devMode)
     -- Keep the watcher alive
     library <- loadOnce absoluteSourcePath
-    runServerWithConfig library.config.server absoluteSourcePath absoluteOutputPath
+    let modifiedConfig = applyDevMode library.config devMode
+    runServerWithConfig modifiedConfig.server absoluteSourcePath absoluteOutputPath
     forever $ threadDelay 1000000
 
 data Command = 
-    WatchServe (Maybe FilePath) (Maybe FilePath) 
-  | Build (Maybe FilePath) (Maybe FilePath)
+    WatchServe (Maybe FilePath) (Maybe FilePath) Bool
+  | Build (Maybe FilePath) (Maybe FilePath) Bool
   | Jekyll (Maybe FilePath) (Maybe FilePath) (Maybe String)
 
 commandParser :: Parser Command
@@ -81,6 +82,9 @@ watchServeParser = WatchServe
       ( long "output"
      <> metavar "OUTPUT_DIR"
      <> help "Output directory which will also be served." ))
+  <*> switch
+      ( long "dev-mode"
+     <> help "Enable development mode (sets hostname to 'localhost' and disables user authentication)" )
 
 buildParser :: Parser Command
 buildParser = Build
@@ -92,6 +96,9 @@ buildParser = Build
       ( long "output"
      <> metavar "OUTPUT_DIR"
      <> help "Output directory" ))
+  <*> switch
+      ( long "dev-mode"
+     <> help "Enable development mode (sets hostname to 'localhost' and disables user authentication)" )
 
 jekyllParser :: Parser Command
 jekyllParser = Jekyll
@@ -112,12 +119,12 @@ defaultEntryPoint :: IO ()
 defaultEntryPoint = do
   command' <- execParser opts
   case command' of
-    WatchServe maybeSourcePath maybeOutputPath -> do
+    WatchServe maybeSourcePath maybeOutputPath forceLocalhost -> do
       (absoluteSourcePath, absoluteOutputPath) <- determineDirectories maybeSourcePath maybeOutputPath
-      watchServe absoluteSourcePath absoluteOutputPath
-    Build maybeSourcePath maybeOutputPath -> do
+      watchServe absoluteSourcePath absoluteOutputPath forceLocalhost
+    Build maybeSourcePath maybeOutputPath forceLocalhost -> do
       (absoluteSourcePath, absoluteOutputPath) <- determineDirectories maybeSourcePath maybeOutputPath
-      buildTree absoluteSourcePath absoluteOutputPath
+      buildTree absoluteSourcePath absoluteOutputPath forceLocalhost
     Jekyll maybeSourcePath maybeOutputPath maybeAfter -> do
       (absoluteSourcePath, absoluteOutputPath) <- determineDirectories maybeSourcePath maybeOutputPath
       library <- loadOnce absoluteSourcePath

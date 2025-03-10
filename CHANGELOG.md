@@ -5,6 +5,12 @@ user in the changelog.
 
 ## [Unreleased]
 
+## [0.41.0.0] - 2025-03-10
+
+### Changed
+
+* Figlet font rendering now gives each word its own "line"
+
 ## [0.40.0.0] - 2025-03-09
 
 ### Added
@@ -265,7 +271,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.40.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.41.0.0...HEAD
+[0.41.0.0]: https://github.com/someodd/bore/compare/v0.40.0.0...v0.41.0.0
 [0.40.0.0]: https://github.com/someodd/bore/compare/v0.39.0.0...v0.40.0.0
 [0.39.0.0]: https://github.com/someodd/bore/compare/v0.38.0.0...v0.39.0.0
 [0.38.0.0]: https://github.com/someodd/bore/compare/v0.37.0.0...v0.38.0.0

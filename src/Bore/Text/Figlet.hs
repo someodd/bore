@@ -105,9 +105,17 @@ renderFiglet fontPath inputText = do
 -}
 
 -- Render the input text using the parsed Figlet font
+-- Modified to render each word on its own line
 renderText :: FigletFont -> Text -> Text
 renderText font input =
-  let charLines = map (lookupFigletChar (charMap font)) (T.unpack input)
+  let words' = T.split (== ' ') input
+      renderedWords = map (renderSingleWord font) words'
+  in T.intercalate "\n" renderedWords
+
+-- Render a single word
+renderSingleWord :: FigletFont -> Text -> Text
+renderSingleWord font word =
+  let charLines = map (lookupFigletChar (charMap font)) (T.unpack word)
       height = maximumDef 0 $ map length charLines
       paddedCharLines = map (padLines height) charLines
   in T.unlines $ concatLines paddedCharLines

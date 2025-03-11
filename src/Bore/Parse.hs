@@ -191,6 +191,9 @@ handleAllFiles library projectDirectoryAbsolutePath outputDirectoryAbsolutePath 
 
 
 -- | Apply development mode settings to a config if needed
+--
+-- This is especially relevant to parsing because of the "fill in the blanks" nature of
+-- creating gophermaps, where the host/port is assumed.
 applyDevMode :: Config -> Bool -> Config
 applyDevMode config True = 
   config { server = (server config) { hostname = Text.pack "localhost", user = Nothing } }

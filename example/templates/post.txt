@@ -1,5 +1,7 @@
 {{! For Phlog posts. }}
 
+{{ title }}
+
 {{#figlet}}
 small.flf
 {{title}}

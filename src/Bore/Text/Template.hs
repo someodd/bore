@@ -19,6 +19,7 @@ import qualified Data.HashMap.Strict as H
 import Text.Mustache.Compile
 import Text.Mustache
 import Text.Mustache.Parser
+import Text.Mustache.Types (STree, Node(..))
 
 import System.FilePath ((</>))
 import qualified Data.Map as Map
@@ -28,6 +29,25 @@ import Bore.FrontMatter (FrontMatter(..), parent, updateFrontMatter, parseFrontM
 import Bore.Text.Template.Replacements
 import Bore.Library (Library(..))
 import Bore.FileLayout
+
+-- | Function to disable HTML escaping in an AST
+disableEscaping :: STree -> STree
+disableEscaping = map transformNode
+  where
+    transformNode :: Node Text.Text -> Node Text.Text
+    transformNode (Variable _ name) = Variable False name  -- Set escaped to False
+    transformNode (Section name tree) = Section name (disableEscaping tree)
+    transformNode (InvertedSection name tree) = InvertedSection name (disableEscaping tree)
+    transformNode node = node
+
+-- | Helper to disable escaping in a template
+disableEscapingTemplate :: Template -> Template
+disableEscapingTemplate template = 
+  template { 
+    ast = disableEscaping (ast template),
+    -- Also process partial templates recursively
+    partials = H.map disableEscapingTemplate (partials template)
+  }
 
 -- | This is like `automaticCompile`, except we use `Text`.
 --
@@ -46,9 +66,10 @@ automaticCompileText projectRoot templateToRenderText = do
   let mainPartialAST =
         case parse "partial" templateToRenderText of
           Left err -> error $ show err
-          Right ast' -> ast'
+          Right ast' -> disableEscaping ast'  -- Apply transformation here
       partials' = getPartials mainPartialAST
   partialTemplates <- traverse (getCompiledTemplate searchSpace) partials'
+  -- Apply transformation to partials too
   let templateCache = H.fromList (zip partials' partialTemplates)
   pure $ Template "partial" mainPartialAST templateCache
 
@@ -57,7 +78,7 @@ getCompiledTemplate searchSpace' templateToRenderPath = do
   compiled <- automaticCompile searchSpace' templateToRenderPath
   case compiled of
     Left err -> error $ show err
-    Right template -> pure template
+    Right template -> pure $ disableEscapingTemplate template
 
 -- FIXME: could use some work! also i'm thinking about if frontmatter inheritence is a
 -- good or bad thing is... like it won't show inherited titles for phlog posts, so...
@@ -82,7 +103,7 @@ renderParentTemplate library projectRoot frontMatter sourceText parentTemplateNa
     mainTemplate <- compileTemplateWithCache newSearchSpace mainTemplateCache parentPath >>= \errorOrTemplate ->
         case errorOrTemplate of
             Left err -> error $ "Error with file " ++ parentPath ++ ": " ++ show err
-            Right template -> pure template
+            Right template -> pure $ disableEscapingTemplate template  -- Apply transformation here
 
     -- this is weird and repeats...
     let templateText = substitute mainTemplate $ Map.fromList substitutions'

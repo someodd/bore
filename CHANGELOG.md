@@ -5,6 +5,12 @@ user in the changelog.
 
 ## [Unreleased]
 
+## [0.42.0.0] - 2025-03-14
+
+#### Fixed
+
+* No more HTML entity escaping!
+
 ## [0.41.0.0] - 2025-03-10
 
 ### Changed
@@ -271,7 +277,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.41.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.42.0.0...HEAD
+[0.42.0.0]: https://github.com/someodd/bore/compare/v0.41.0.0...v0.42.0.0
 [0.41.0.0]: https://github.com/someodd/bore/compare/v0.40.0.0...v0.41.0.0
 [0.40.0.0]: https://github.com/someodd/bore/compare/v0.39.0.0...v0.40.0.0
 [0.39.0.0]: https://github.com/someodd/bore/compare/v0.38.0.0...v0.39.0.0

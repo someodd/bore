@@ -5,6 +5,10 @@ user in the changelog.
 
 ## [Unreleased]
 
+#### Fixed
+
+* If `draft` is `true` then don't write out! FrontMatter.
+
 ## [0.42.0.0] - 2025-03-14
 
 #### Fixed

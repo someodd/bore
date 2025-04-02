@@ -141,9 +141,15 @@ parseFile library projectDirectory sourceFile destination = do
     -- Probably important that turning it into a gopher menu is the last step.
     let possiblyGopherizedText = possiblyGopherize afterTemplatingText frontMatterMaybe library
 
-    -- We're done transforming the damn thing! Write the file out and return useful data.
-    (relativePath, fullDestination) <- writeDest projectDirectory sourceFile destination possiblyGopherizedText
-    pure (fullDestination, relativePath, frontMatterMaybe)
+    -- If the frontmatter's draft setting is true, we don't want to write the file out.
+    case frontMatterMaybe >>= (.draft) of
+        Just True -> do
+            putStrLn $ "Skipping file because it's a draft: " ++ sourceFile
+            pure (sourceFile, relativePath', Nothing)
+        _ -> do
+            -- We're done transforming the damn thing! Write the file out and return useful data.
+            (relativePath, fullDestination) <- writeDest projectDirectory sourceFile destination possiblyGopherizedText
+            pure (fullDestination, relativePath, frontMatterMaybe)
 
 
 {- | Function which handles a file in the walking process.

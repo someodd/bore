@@ -23,7 +23,7 @@ fi
 sed -i -E "s/^version: [0-9]+(\.[0-9]+)*$/version: $VERSION/" package.yaml
 
 # Update the version in bore.cabal
-sed -i -E "s/^version: [0-9]+(\.[0-9]+)*$/version: $VERSION/" package.yaml
+sed -i -E "s/^version: [0-9]+(\.[0-9]+)*$/version: $VERSION/" bore.cabal
 
 # Update the `CHANGELOG.md``
 ./reposcripts/update-changelog.sh "$VERSION"

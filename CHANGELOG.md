@@ -5,6 +5,8 @@ user in the changelog.
 
 ## [Unreleased]
 
+## [0.45.0.0] - 2025-04-07
+
 ## Added
 
 * `--wait` flag for `watchServe` so when you copy files over via `sftp`, `bore` won't
@@ -295,7 +297,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.44.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.45.0.0...HEAD
+[0.45.0.0]: https://github.com/someodd/bore/compare/v0.44.0.0...v0.45.0.0
 [0.44.0.0]: https://github.com/someodd/bore/compare/v0.43.0.0...v0.44.0.0
 [0.43.0.0]: https://github.com/someodd/bore/compare/v0.42.0.0...v0.43.0.0
 [0.42.0.0]: https://github.com/someodd/bore/compare/v0.41.0.0...v0.42.0.0

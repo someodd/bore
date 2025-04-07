@@ -5,6 +5,11 @@ user in the changelog.
 
 ## [Unreleased]
 
+## Added
+
+* `--wait` flag for `watchServe` so when you copy files over via `sftp`, `bore` won't
+  spawn a rebuild for every single file changed/copied/deleted
+
 ## [0.44.0.0] - 2025-04-07
 
 ## Fixed

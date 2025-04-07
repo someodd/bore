@@ -12,6 +12,8 @@ import System.Directory (canonicalizePath)
 import System.FSNotify
 import Control.Concurrent (threadDelay)
 import Control.Monad (forever)
+import Data.IORef (newIORef, readIORef, writeIORef)
+import Data.Time.Clock (getCurrentTime, diffUTCTime)
 import Options.Applicative
 
 {- | Determine the source and output directories.
@@ -32,13 +34,17 @@ determineDirectories maybeSourcePath maybeOutputPath = do
 {- | Serve the gopherhole, if there are any changes to the children of the "source path"
 then rebuild the gopherhole.
 -}
-watchServe :: AbsolutePath -> AbsolutePath -> Bool -> IO ()
-watchServe absoluteSourcePath absoluteOutputPath devMode = do
+watchServe :: AbsolutePath -> AbsolutePath -> Bool -> Int -> IO ()
+watchServe absoluteSourcePath absoluteOutputPath devMode waitSeconds = do
   putStrLn "Building first..."
   buildTree absoluteSourcePath absoluteOutputPath devMode
 
   putStrLn $ "Starting server and watching for changes in source: " ++ absoluteSourcePath
+  putStrLn $ "Will wait " ++ show waitSeconds ++ " seconds after detecting changes before rebuilding"
 
+  -- Create a mutable reference to track when the last rebuild was triggered
+  lastRebuildVar <- newIORef =<< getCurrentTime
+  
   -- Watch the directory for changes and rebuild on changes
   withManager $ \mgr -> do
     _ <- watchTree
@@ -46,8 +52,23 @@ watchServe absoluteSourcePath absoluteOutputPath devMode = do
       absoluteSourcePath
       (const True) -- Watch all changes
       (\_ -> do
-          putStrLn "Change detected, about to rebuild..."
-          buildTree absoluteSourcePath absoluteOutputPath devMode)
+          -- Check if enough time has passed since the last rebuild
+          now <- getCurrentTime
+          lastRebuild <- readIORef lastRebuildVar
+          let timeSinceLastRebuild = diffUTCTime now lastRebuild
+          let secondsSinceLastRebuild = floor (realToFrac timeSinceLastRebuild :: Double)
+          
+          if secondsSinceLastRebuild < waitSeconds
+            then putStrLn $ "Change detected, but ignoring as previous rebuild was " ++ 
+                           show secondsSinceLastRebuild ++ " seconds ago"
+            else do
+              putStrLn $ "Change detected, waiting " ++ show waitSeconds ++ " seconds before rebuilding..."
+              threadDelay (waitSeconds * 1000000)  -- Convert seconds to microseconds
+              
+              -- Check if another rebuild has been triggered during our wait
+              writeIORef lastRebuildVar =<< getCurrentTime
+              putStrLn "Rebuilding now..."
+              buildTree absoluteSourcePath absoluteOutputPath devMode)
     -- Keep the watcher alive
     library <- loadOnce absoluteSourcePath
     let modifiedConfig = applyDevMode library.config devMode
@@ -55,7 +76,7 @@ watchServe absoluteSourcePath absoluteOutputPath devMode = do
     forever $ threadDelay 1000000
 
 data Command = 
-    WatchServe (Maybe FilePath) (Maybe FilePath) Bool
+    WatchServe (Maybe FilePath) (Maybe FilePath) Bool Int
   | Build (Maybe FilePath) (Maybe FilePath) Bool
   | Jekyll (Maybe FilePath) (Maybe FilePath) (Maybe String)
 
@@ -85,6 +106,12 @@ watchServeParser = WatchServe
   <*> switch
       ( long "dev-mode"
      <> help "Enable development mode (sets hostname to 'localhost' and disables user authentication)" )
+  <*> option auto
+      ( long "wait"
+     <> metavar "SECONDS"
+     <> help "Number of seconds to wait before rebuilding after a change is detected"
+     <> value 0
+     <> showDefault )
 
 buildParser :: Parser Command
 buildParser = Build
@@ -119,9 +146,9 @@ defaultEntryPoint :: IO ()
 defaultEntryPoint = do
   command' <- execParser opts
   case command' of
-    WatchServe maybeSourcePath maybeOutputPath forceLocalhost -> do
+    WatchServe maybeSourcePath maybeOutputPath forceLocalhost waitSeconds -> do
       (absoluteSourcePath, absoluteOutputPath) <- determineDirectories maybeSourcePath maybeOutputPath
-      watchServe absoluteSourcePath absoluteOutputPath forceLocalhost
+      watchServe absoluteSourcePath absoluteOutputPath forceLocalhost waitSeconds
     Build maybeSourcePath maybeOutputPath forceLocalhost -> do
       (absoluteSourcePath, absoluteOutputPath) <- determineDirectories maybeSourcePath maybeOutputPath
       buildTree absoluteSourcePath absoluteOutputPath forceLocalhost

@@ -41,6 +41,7 @@ library
       Bore.Text.Clean
       Bore.Text.Containers
       Bore.Text.Figlet
+      Bore.Text.GopherExtension
       Bore.Text.Gophermap
       Bore.Text.Template
       Bore.Text.Template.Replacements

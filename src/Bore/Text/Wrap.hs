@@ -22,6 +22,7 @@ import Data.Maybe (fromMaybe)
 
 import qualified Bore.Library as Library
 import Bore.Text.Gophermap (imagePathToGopherType, gopherTypeByExt)
+import Bore.Text.GopherExtension (gophermenuSpec)
 import Bore.Config
 
 -- Configuration for the renderer
@@ -66,9 +67,7 @@ instance IsBlock WrapRenderer WrapRenderer where
    let width = lineWidth (config state)
    wrapped <- content
    let wrappedNoNewlines = T.replace "\n" " " wrapped
-   if '\t' `T.elem` wrappedNoNewlines
-     then return $ wrappedNoNewlines <> "\n\n"
-     else return $ wrapText defaultWrapSettings width wrappedNoNewlines <> "\n\n"
+   return $ wrapText defaultWrapSettings width wrappedNoNewlines <> "\n\n"
 
  plain = id
 
@@ -78,8 +77,13 @@ instance IsBlock WrapRenderer WrapRenderer where
    state <- get
    let width = lineWidth (config state)
    wrapped <- content
-   let wrappedLines = T.lines $ wrapText defaultWrapSettings (width - 2) wrapped
-   return $ T.intercalate "\n" (map ("> " <>) wrappedLines) <> "\n\n"
+   let splitByDoubleNewline = T.splitOn "\n\n" wrapped
+       removeNewLines = map (T.replace "\n" " ") splitByDoubleNewline
+       (applyWrapEachParagraph :: [T.Text]) = map (wrapText defaultWrapSettings (width - 2)) removeNewLines
+       (rejoined :: T.Text) = T.intercalate "\n\n" applyWrapEachParagraph
+       safeInit xs = take (length xs - 1) xs
+       applyPrefix = T.unlines $ map ("> " <>) $ safeInit $ T.lines rejoined
+   return $ applyPrefix <> "\n"
 
  heading level (WrapRenderer content) = WrapRenderer $ do
    wrapped <- content
@@ -158,8 +162,9 @@ instance IsInline WrapRenderer where
 -- TODO/FIXME: add option for parsing as menu (for footnotes and images)
 -- Parse and Render Markdown
 wrapMarkdownParagraphs :: Library.Library -> Bool -> Int -> Text -> Either String Text
-wrapMarkdownParagraphs library gopherMap width input =
- case commonmark "source" input of
+wrapMarkdownParagraphs library gopherMap width input = do
+ daResult <- parseCommonmarkWith (gophermenuSpec <> defaultSyntaxSpec) (tokenize "source" input)
+ case daResult of
    Left err -> Left $ show err
    Right (WrapRenderer result) ->
      let initialState = RendererState (WrapConfig library gopherMap width) [] 1

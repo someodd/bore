@@ -42,9 +42,6 @@ response' query absoluteSourcePath absoluteOutputPath host port results = do
   menuItems <- mapM (resultToMenuItem absoluteSourcePath absoluteOutputPath host port) results
   pure . TextResponse . render $ info ("Results for search: " <>  query) : concat menuItems
 
--- | Check the source path for this file, check its frontmatter to see if gophermap: True.
---checkIfGophermap
-
 -- | Use Venusia.MenuBuilder to construct a line for a gopher menu.
 resultToMenuItem :: AbsolutePath -> AbsolutePath -> T.Text -> Int -> SearchResult -> IO [T.Text]
 resultToMenuItem absoluteSourcePath absoluteOutputPath host port result = do

@@ -123,7 +123,7 @@ possiblyGopherize someText maybeFrontMatter library = do
 sourceFile is the absolute path to the file being parsed.
 
 -}
-parseFile :: Library -> FilePath -> FilePath -> FilePath -> IO (FilePath, RelativePath, Maybe FrontMatter)
+parseFile :: Library -> FilePath -> FilePath -> FilePath -> IO (Maybe (FilePath, RelativePath, Maybe FrontMatter))
 parseFile library projectDirectory sourceFile destination = do
     fileContents <- TextIO.readFile sourceFile
     -- FIXME: relative gets grabbed twice.
@@ -145,11 +145,11 @@ parseFile library projectDirectory sourceFile destination = do
     case frontMatterMaybe >>= (.draft) of
         Just True -> do
             putStrLn $ "Skipping file because it's a draft: " ++ sourceFile
-            pure (sourceFile, relativePath', Nothing)
+            pure Nothing
         _ -> do
             -- We're done transforming the damn thing! Write the file out and return useful data.
             (relativePath, fullDestination) <- writeDest projectDirectory sourceFile destination possiblyGopherizedText
-            pure (fullDestination, relativePath, frontMatterMaybe)
+            pure $ Just (fullDestination, relativePath, frontMatterMaybe)
 
 
 {- | Function which handles a file in the walking process.
@@ -178,7 +178,7 @@ handleFile library sourceDirectory outputDirectory filePath = do
         else if takeFullExtension filePath `elem` onlyParse
             then do
                 putStrLn $ "parse the file: " ++ filePath
-                Just <$> parseFile library sourceDirectory filePath outputDirectory
+                parseFile library sourceDirectory filePath outputDirectory
             else do
                 putStrLn $ "only copy file: " ++ filePath
                 -- FIXME: this is copying files and making a directory for them that includes their name!

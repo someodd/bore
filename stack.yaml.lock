@@ -47,9 +47,9 @@ packages:
   original:
     hackage: smtlib-backends-0.3
 - completed:
-    hackage: smtlib-backends-process-0.3@sha256:bb730a55c5974eeb24112b560d30c49d518d6de45148723435219baa269f8b5e,1676
+    hackage: smtlib-backends-process-0.3@sha256:1cdd2ae8ebf3786f08cafe2f6b47001f7647779ad87cba3f05250f68d70e3f07,1676
     pantry-tree:
-      sha256: 789e2f5fc72fedad8dd6880319803120ad0cd712c2a44faaff321cb4d50620c3
+      sha256: 05326db88add261e687f039a81b8573a4192b42e47e994230e516b3c604af3e8
       size: 461
   original:
     hackage: smtlib-backends-process-0.3

@@ -26,11 +26,7 @@ dependencies:
   - base
   - text
   - filepath-bytestring
-  - socket
-  - systemd
-  - liquidhaskell
   - unix
-  - fast-logger
   - fsnotify
   - tomland
   - xml-conduit-writer
@@ -55,21 +51,14 @@ dependencies:
   - frontmatter
   - ansi-wl-pprint
   - commonmark
-  - attoparsec
   - vector
   - time
   - hashable
   - fuzzy-dates
   - hourglass
-  - raw-strings-qq
   - aeson
-  - network-uri
-  - prettyprinter
   - commonmark-extensions
-  - neat-interpolation
   - yaml
-  - spacecookie
-  - edit-distance
   - Venusia
   - ryvm
   - safe
@@ -111,8 +100,4 @@ tests:
     ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
     build-depends:
       - bore
-      - QuickCheck
-      - text
-      - temporary
-      - doctest
     default-language:    GHC2021

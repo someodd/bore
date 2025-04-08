@@ -5,7 +5,7 @@ https://github.com/sternenseemann/spacecookie/
 
 -}
 {-# LANGUAGE OverloadedStrings #-}
-module Bore.SpacecookieClone.Serve (runServerWithConfig) where
+module Bore.Serve (runServerWithConfig) where
 
 import Ryvm.Search (getSearchResults, SearchResult(..))
 import Venusia.Server

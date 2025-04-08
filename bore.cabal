@@ -31,11 +31,7 @@ library
       Bore.Library
       Bore.Parse
       Bore.Phlog
-      Bore.SpacecookieClone.FileType
-      Bore.SpacecookieClone.Search.Search
-      Bore.SpacecookieClone.Search.Verified
-      Bore.SpacecookieClone.Search.WeightsTypes
-      Bore.SpacecookieClone.Serve
+      Bore.Serve
       Bore.Text.Clean
       Bore.Text.Containers
       Bore.Text.Figlet
@@ -63,7 +59,6 @@ library
       Venusia
     , aeson
     , ansi-wl-pprint
-    , attoparsec
     , base
     , bytestring
     , commonmark
@@ -71,8 +66,6 @@ library
     , containers
     , data-default
     , directory
-    , edit-distance
-    , fast-logger
     , filepath
     , filepath-bytestring
     , filepattern
@@ -82,24 +75,16 @@ library
     , hashable
     , hashmap
     , hourglass
-    , liquidhaskell
     , mime-types
     , mtl
     , mustache
-    , neat-interpolation
-    , network-uri
     , optparse-applicative
     , parsec
-    , prettyprinter
-    , raw-strings-qq
     , regex-compat
     , regex-tdfa
     , ryvm
     , safe
-    , socket
-    , spacecookie
     , split
-    , systemd
     , text
     , time
     , tomland
@@ -130,7 +115,6 @@ executable bore
       Venusia
     , aeson
     , ansi-wl-pprint
-    , attoparsec
     , base
     , bore
     , bytestring
@@ -139,8 +123,6 @@ executable bore
     , containers
     , data-default
     , directory
-    , edit-distance
-    , fast-logger
     , filepath
     , filepath-bytestring
     , filepattern
@@ -150,24 +132,16 @@ executable bore
     , hashable
     , hashmap
     , hourglass
-    , liquidhaskell
     , mime-types
     , mtl
     , mustache
-    , neat-interpolation
-    , network-uri
     , optparse-applicative
     , parsec
-    , prettyprinter
-    , raw-strings-qq
     , regex-compat
     , regex-tdfa
     , ryvm
     , safe
-    , socket
-    , spacecookie
     , split
-    , systemd
     , text
     , time
     , tomland
@@ -191,11 +165,9 @@ test-suite bore-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Werror -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      QuickCheck
-    , Venusia
+      Venusia
     , aeson
     , ansi-wl-pprint
-    , attoparsec
     , base
     , bore
     , bytestring
@@ -204,9 +176,6 @@ test-suite bore-test
     , containers
     , data-default
     , directory
-    , doctest
-    , edit-distance
-    , fast-logger
     , filepath
     , filepath-bytestring
     , filepattern
@@ -216,25 +185,16 @@ test-suite bore-test
     , hashable
     , hashmap
     , hourglass
-    , liquidhaskell
     , mime-types
     , mtl
     , mustache
-    , neat-interpolation
-    , network-uri
     , optparse-applicative
     , parsec
-    , prettyprinter
-    , raw-strings-qq
     , regex-compat
     , regex-tdfa
     , ryvm
     , safe
-    , socket
-    , spacecookie
     , split
-    , systemd
-    , temporary
     , text
     , time
     , tomland

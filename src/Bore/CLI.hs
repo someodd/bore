@@ -6,7 +6,7 @@ import Bore.FileLayout
 import Bore.Library
 import Bore.Parse (buildTree, applyDevMode)
 import Bore.Config
-import Bore.SpacecookieClone.Serve (runServerWithConfig)
+import Bore.Serve (runServerWithConfig)
 import qualified Bore.ToJekyll as ToJekyll (buildTree)
 
 import Data.Text (pack)

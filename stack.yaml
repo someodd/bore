@@ -46,6 +46,7 @@ extra-deps:
 - validation-selective-0.2.0.0@sha256:e1ab5482dede8bf676d729a09109c7c5f798363b9d458e4197a27afb8b48fdd3,3907
 - spacecookie-1.0.0.2@sha256:499ebafa27578efd9cd41e75731ed6fdefeec7d5f0b21a1f494d54481f2c5a22,4232
 # liquid haskell, thanks: https://github.com/ucsd-progsys/lh-plugin-demo/blob/main/stack/stack-9.6.3.yaml
+# FIXME: do I need these here? i thought only the depend did...
 - rest-rewrite-0.4.3
 - smtlib-backends-0.3
 - smtlib-backends-process-0.3

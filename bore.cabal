@@ -31,13 +31,11 @@ library
       Bore.Library
       Bore.Parse
       Bore.Phlog
-      Bore.SpacecookieClone.Config
       Bore.SpacecookieClone.FileType
       Bore.SpacecookieClone.Search.Search
       Bore.SpacecookieClone.Search.Verified
       Bore.SpacecookieClone.Search.WeightsTypes
       Bore.SpacecookieClone.Serve
-      Bore.SpacecookieClone.Systemd
       Bore.Text.Clean
       Bore.Text.Containers
       Bore.Text.Figlet
@@ -62,7 +60,8 @@ library
       DuplicateRecordFields
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Werror
   build-depends:
-      aeson
+      Venusia
+    , aeson
     , ansi-wl-pprint
     , attoparsec
     , base
@@ -127,7 +126,8 @@ executable bore
       OverloadedRecordDot
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Werror
   build-depends:
-      aeson
+      Venusia
+    , aeson
     , ansi-wl-pprint
     , attoparsec
     , base
@@ -190,6 +190,7 @@ test-suite bore-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Werror -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       QuickCheck
+    , Venusia
     , aeson
     , ansi-wl-pprint
     , attoparsec

@@ -1,5 +1,7 @@
 module Bore.CLI (defaultEntryPoint) where
 
+import Venusia.Systemd
+
 import Bore.FileLayout
 import Bore.Library
 import Bore.Parse (buildTree, applyDevMode)
@@ -15,6 +17,9 @@ import Control.Monad (forever)
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.Time.Clock (getCurrentTime, diffUTCTime)
 import Options.Applicative
+import Data.Maybe (fromMaybe)
+import System.Environment (getExecutablePath)
+import qualified Data.Text as T
 
 {- | Determine the source and output directories.
 
@@ -79,6 +84,7 @@ data Command =
     WatchServe (Maybe FilePath) (Maybe FilePath) Bool Int
   | Build (Maybe FilePath) (Maybe FilePath) Bool
   | Jekyll (Maybe FilePath) (Maybe FilePath) (Maybe String)
+  | Systemd (Maybe FilePath) (Maybe FilePath)
 
 commandParser :: Parser Command
 commandParser = subparser
@@ -91,6 +97,9 @@ commandParser = subparser
  <> command "jekyll" (info (jekyllParser <**> helper)
       ( fullDesc
      <> progDesc "Generate Jekyll-compatible posts from the source directory" ))
+ <> command "systemd" (info (systemdParser <**> helper)
+      ( fullDesc
+     <> progDesc "Create a systemd service file" ))
   )
 
 watchServeParser :: Parser Command
@@ -142,6 +151,17 @@ jekyllParser = Jekyll
      <> metavar "DATE"
      <> help "Only process posts after the given date" ))
 
+systemdParser :: Parser Command
+systemdParser = Systemd
+  <$> optional (strOption
+      ( long "source"
+     <> metavar "SOURCE_DIR"
+     <> help "Source directory" ))
+  <*> optional (strOption
+      ( long "output"
+     <> metavar "OUTPUT_DIR"
+     <> help "Output directory" ))
+
 defaultEntryPoint :: IO ()
 defaultEntryPoint = do
   command' <- execParser opts
@@ -156,6 +176,24 @@ defaultEntryPoint = do
       (absoluteSourcePath, absoluteOutputPath) <- determineDirectories maybeSourcePath maybeOutputPath
       library <- loadOnce absoluteSourcePath
       ToJekyll.buildTree library.config.server absoluteSourcePath absoluteOutputPath (pack <$> maybeAfter)
+    Systemd maybeSourcePath maybeOutputPath -> do
+      (absoluteSourcePath, absoluteOutputPath) <- determineDirectories maybeSourcePath maybeOutputPath
+      library <- loadOnce absoluteSourcePath
+      let
+        port = (fromIntegral $ fromMaybe 70 library.config.server.listenPort :: Int)
+        user = T.unpack <$> library.config.server.user
+        execArgs = "watchServe --wait 10 --source " ++ absoluteSourcePath ++ " --output " ++ absoluteOutputPath
+      -- Get the path to our own executable
+      exePath <- getExecutablePath
+      let fullExePath = exePath ++ " " ++ execArgs
+      -- Setup the systemd service
+      setupSystemdService 
+        "bore"         -- Service name
+        fullExePath    -- Executable path
+        (show port)    -- Port
+        user           -- User
+        Nothing        -- Group
+        (Just absoluteSourcePath)  -- Working directory
   where
     opts = info (commandParser <**> helper)
       ( fullDesc

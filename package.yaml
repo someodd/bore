@@ -70,6 +70,7 @@ dependencies:
   - yaml
   - spacecookie
   - edit-distance
+  - Venusia
   - safe
   - mime-types
   - regex-tdfa

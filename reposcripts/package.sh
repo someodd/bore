@@ -30,8 +30,6 @@ mkdir -p $TEMPORARY_PKG_DIR/var/gopher/output
 
 # Copy the built binary to the temporary package directory
 cp ./bin/bore $TEMPORARY_PKG_DIR/usr/local/bin/bore
-# Copy the systemd service file to the temporary package directory
-cp ./reposcripts/bore.service $TEMPORARY_PKG_DIR/etc/systemd/system/bore.service
 # Copy the example gopherhole to the temporary package directory
 cp -r ./example $TEMPORARY_PKG_DIR/var/gopher/source
 # Copy this/overwrite for the daemon
@@ -48,7 +46,6 @@ fpm -s dir -t deb -n bore -v ${VERSION} \
     -p "${OUTPUT_PATH}" \
     -C $TEMPORARY_PKG_DIR \
     usr/local/bin/bore \
-    etc/systemd/system/bore.service \
     var/gopher/output \
     var/gopher/source
 

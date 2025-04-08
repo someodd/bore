@@ -187,12 +187,13 @@ defaultEntryPoint = do
       exePath <- getExecutablePath
       let fullExePath = exePath ++ " " ++ execArgs
       -- Setup the systemd service
+      -- FIXME: this stuff is hardcoded for now
       setupSystemdService 
         "bore"         -- Service name
         fullExePath    -- Executable path
         (show port)    -- Port
-        user           -- User
-        Nothing        -- Group
+        "bore"           -- User
+        "bore"        -- Group
         (Just absoluteSourcePath)  -- Working directory
   where
     opts = info (commandParser <**> helper)

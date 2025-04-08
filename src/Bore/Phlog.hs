@@ -262,6 +262,7 @@ phlogIndexLinks hostname port tagLinks mainIndexLink feedLink =
 buildPhlogIndexes :: Text.Text -> Int -> FilePath -> [PhlogMeta] -> IO ()
 buildPhlogIndexes hostname port outputPath phlogMeta = do
     let
+        -- FIXME: shouldn't be necessary because we already skip drafts when parsing (won't be in phlogMeta)
         noDrafts = filter (\(_, _, frontMatter) -> not (fromMaybe False (frontMatter.draft))) phlogMeta
         sortedPhlogMeta = sortPhlogMetaByDate noDrafts
         unreliableTagPaths = unreliablyGetTagIndexPaths sortedPhlogMeta

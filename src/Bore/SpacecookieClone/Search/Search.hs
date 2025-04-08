@@ -118,8 +118,6 @@ computeSelectorScore keywords selector =
   in
     (highlightedSelector, likenessSum)
 
-
-
 -- FIXME: I think longer documents will benefit more or something? there's something like that i'm not thinking of here.
 -- | Calculate proximity score for different keywords based on their positions. The closer
 -- the keywords are to each other, the higher the score. A significant bonus is applied for

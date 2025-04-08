@@ -94,6 +94,7 @@ library
     , raw-strings-qq
     , regex-compat
     , regex-tdfa
+    , ryvm
     , safe
     , socket
     , spacecookie
@@ -161,6 +162,7 @@ executable bore
     , raw-strings-qq
     , regex-compat
     , regex-tdfa
+    , ryvm
     , safe
     , socket
     , spacecookie
@@ -226,6 +228,7 @@ test-suite bore-test
     , raw-strings-qq
     , regex-compat
     , regex-tdfa
+    , ryvm
     , safe
     , socket
     , spacecookie

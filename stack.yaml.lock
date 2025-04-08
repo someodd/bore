@@ -99,6 +99,17 @@ packages:
   original:
     commit: 1a6218582e5d73ff0d631222e2d0ee338a2b0749
     git: https://github.com/someodd/venusia.git
+- completed:
+    commit: 03348a35eefa1adbbadfa8c1d32c55210a6a0093
+    git: https://github.com/someodd/ryvm.git
+    name: ryvm
+    pantry-tree:
+      sha256: 052efa5153ed70da9cc72b4dd0dfd344c1677e680dfd8b9b5d109c096092e976
+      size: 1496
+    version: 0.43.0.0
+  original:
+    commit: 03348a35eefa1adbbadfa8c1d32c55210a6a0093
+    git: https://github.com/someodd/ryvm.git
 snapshots:
 - completed:
     sha256: 1b4c2669e26fa828451830ed4725e4d406acc25a1fa24fcc039465dd13d7a575

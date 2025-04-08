@@ -56,6 +56,8 @@ extra-deps:
 - liquid-vector-0.13.1.0.1
 - git: https://github.com/someodd/venusia.git
   commit: 1a6218582e5d73ff0d631222e2d0ee338a2b0749
+- git: https://github.com/someodd/ryvm.git
+  commit: 03348a35eefa1adbbadfa8c1d32c55210a6a0093
 
 build:
   pre-build:

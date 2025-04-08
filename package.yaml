@@ -71,6 +71,7 @@ dependencies:
   - spacecookie
   - edit-distance
   - Venusia
+  - ryvm
   - safe
   - mime-types
   - regex-tdfa

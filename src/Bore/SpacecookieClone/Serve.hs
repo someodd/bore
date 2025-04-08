@@ -7,66 +7,64 @@ https://github.com/sternenseemann/spacecookie/
 {-# LANGUAGE OverloadedStrings #-}
 module Bore.SpacecookieClone.Serve (runServerWithConfig) where
 
+import Ryvm.Search (getSearchResults, SearchResult(..))
 import Venusia.Server
 import Venusia.FileHandler
 import Venusia.MenuBuilder
 
-import Bore.SpacecookieClone.Search.Search
+--import Bore.SpacecookieClone.Search.Search
 import qualified Bore.Config as BoreConfig
 import Bore.FileLayout
+import Bore.FrontMatter ( isGophermap, parseFrontMatter )
 
-import Data.Text.Encoding (decodeUtf8)
-import Network.Gopher
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Builder as BB
 import Data.Maybe (fromMaybe)
 import System.Posix.Directory (changeWorkingDirectory)
-import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Text as T
-import qualified Data.ByteString.Lazy as BSL
-import Data.Word (Word8)
-import Network.Gopher.Util (asciiOrd)
+import Data.Text.IO qualified as TIO
+import System.FilePath ((</>), makeRelative)
 
--- temporary until we start using ryvm
-fileTypeToChar :: GopherFileType -> Word8
-fileTypeToChar t = asciiOrd $
-  case t of
-    File -> '0'
-    Directory -> '1'
-    PhoneBookServer -> '2'
-    Error -> '3'
-    BinHexMacintoshFile -> '4'
-    DOSArchive -> '5'
-    UnixUuencodedFile -> '6'
-    IndexSearchServer -> '7'
-    TelnetSession -> '8'
-    BinaryFile -> '9'
-    RedundantServer -> '+'
-    Tn3270Session -> 'T'
-    GifFile -> 'g'
-    ImageFile -> 'I'
-    InfoLine -> 'i'
-    Html -> 'h'
 
--- | Temporary until we start using ryvm
-response :: T.Text -> Int -> GopherResponse -> IO Response
-response _ _ (FileResponse str) = pure $ TextResponse (decodeUtf8 str)
-response _ _ (ErrorResponse reason) = pure $ TextResponse $ menu [error' (decodeUtf8 reason)]
-response hostDefault portDefault (MenuResponse items) = do
-  let appendItem acc (Item fileType title path host port) =
-        acc <> BB.word8 (fileTypeToChar fileType) <> mconcat
-          [ BB.byteString title
-          , BB.charUtf8 '\t'
-          , BB.byteString path
-          , BB.charUtf8 '\t'
-          , BB.byteString (fromMaybe (encodeUtf8 hostDefault) host)
-          , BB.charUtf8 '\t'
-          , BB.intDec . fromIntegral $ fromMaybe (fromIntegral portDefault) port
-          , BB.byteString "\r\n"
-          ]
-  let wholeMenu = foldl appendItem mempty items
-  let menuAsText = decodeUtf8 $ B.concat . BSL.toChunks $ BB.toLazyByteString wholeMenu
-  pure $ TextResponse menuAsText
+loadFileContent :: FilePath -> IO T.Text
+loadFileContent = TIO.readFile
+
+-- FIXME: no need IO
+-- Parse the frontmatter of a file and check if it's a gophermap
+isGophermapFile :: T.Text -> Bool
+isGophermapFile content =
+  case parseFrontMatter content of
+    Right (frontmatter, _) -> do
+      isGophermap frontmatter
+    Left _ -> do
+      False
+
+response' :: T.Text -> AbsolutePath -> AbsolutePath -> T.Text -> Int -> [SearchResult] -> IO Response
+response' query absoluteSourcePath absoluteOutputPath host port results = do
+  menuItems <- mapM (resultToMenuItem absoluteSourcePath absoluteOutputPath host port) results
+  pure . TextResponse . render $ info ("Results for search: " <>  query) : concat menuItems
+
+-- | Check the source path for this file, check its frontmatter to see if gophermap: True.
+--checkIfGophermap
+
+-- | Use Venusia.MenuBuilder to construct a line for a gopher menu.
+resultToMenuItem :: AbsolutePath -> AbsolutePath -> T.Text -> Int -> SearchResult -> IO [T.Text]
+resultToMenuItem absoluteSourcePath absoluteOutputPath host port result = do
+  let
+    relativePathToFile = makeRelative absoluteOutputPath result.filePath
+    pathInSource = absoluteSourcePath </> relativePathToFile
+  contents <- loadFileContent pathInSource
+  let
+    absoluteSelector = "/" <> relativePathToFile
+    itemType =
+      if isGophermapFile contents
+        then '1'
+        else '0'
+    title = item itemType (T.pack $ "/" </> result.highlightedFilePath) (T.pack absoluteSelector) host port
+  pure
+    [ info ""
+    , title
+    , info $ "Rank score: " <> (T.pack . show $ result.score)
+    , info result.contexts
+    ]
 
 -- | Register your routes.
 routes :: AbsolutePath -> AbsolutePath -> FilePath -> T.Text -> Int -> [Route]
@@ -78,15 +76,21 @@ routes sourceDirectoryAbsolutePath absoluteOutputPath serveRootOnDisk host port 
         Nothing -> pure $ TextResponse "No wildcard provided."
   ]
 
+-- | Detect if the text is a gophermap and if so, correct it for searching.
+filterGophermaps :: T.Text -> T.Text
+filterGophermaps = id
+
 -- | Handler for search queries (Gopher item type 7).
+--
+-- Includes host and port to help build the menu.
 handleSearch :: AbsolutePath -> AbsolutePath -> T.Text -> Int -> Request -> IO Response
 handleSearch sourceDirectoryAbsolutePath absoluteOutputPath host port request = do
   let query =
         case request.reqQuery of
           Nothing -> ""
           (Just something) -> something
-  results <- getSearchResults query sourceDirectoryAbsolutePath absoluteOutputPath
-  response host port results
+  results <- getSearchResults (Just filterGophermaps) query sourceDirectoryAbsolutePath absoluteOutputPath
+  response' query sourceDirectoryAbsolutePath absoluteOutputPath host port results
 
 runServerWithConfig :: BoreConfig.ServerConfig -> AbsolutePath -> AbsolutePath -> IO ()
 runServerWithConfig boreConfig sourceDirectoryAbsolutePath absoluteOutputPath = do

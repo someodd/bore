@@ -5,7 +5,9 @@ user in the changelog.
 
 ## [Unreleased]
 
-## Changed
+## [0.46.0.0] - 2025-04-07
+
+### Changed
 
 * Start migrating to my `Venusia` dependency for gopher servers!
   This includes adding a `systemd` command.
@@ -302,7 +304,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.45.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.46.0.0...HEAD
+[0.46.0.0]: https://github.com/someodd/bore/compare/v0.45.0.0...v0.46.0.0
 [0.45.0.0]: https://github.com/someodd/bore/compare/v0.44.0.0...v0.45.0.0
 [0.44.0.0]: https://github.com/someodd/bore/compare/v0.43.0.0...v0.44.0.0
 [0.43.0.0]: https://github.com/someodd/bore/compare/v0.42.0.0...v0.43.0.0

@@ -19,7 +19,6 @@ import Data.Time.Clock (getCurrentTime, diffUTCTime)
 import Options.Applicative
 import Data.Maybe (fromMaybe)
 import System.Environment (getExecutablePath)
-import qualified Data.Text as T
 
 {- | Determine the source and output directories.
 
@@ -181,7 +180,7 @@ defaultEntryPoint = do
       library <- loadOnce absoluteSourcePath
       let
         port = (fromIntegral $ fromMaybe 70 library.config.server.listenPort :: Int)
-        user = T.unpack <$> library.config.server.user
+        --user = T.unpack <$> library.config.server.user
         execArgs = "watchServe --wait 10 --source " ++ absoluteSourcePath ++ " --output " ++ absoluteOutputPath
       -- Get the path to our own executable
       exePath <- getExecutablePath
@@ -192,8 +191,8 @@ defaultEntryPoint = do
         "bore"         -- Service name
         fullExePath    -- Executable path
         (show port)    -- Port
-        "bore"           -- User
-        "bore"        -- Group
+        (Just "bore")  -- User
+        (Just "bore")  -- Group
         (Just absoluteSourcePath)  -- Working directory
   where
     opts = info (commandParser <**> helper)

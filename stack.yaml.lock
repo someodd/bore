@@ -89,15 +89,15 @@ packages:
   original:
     hackage: liquid-vector-0.13.1.0.1
 - completed:
-    commit: 1a6218582e5d73ff0d631222e2d0ee338a2b0749
+    commit: 371166432bb2b260810e77a14770b082f3f31d77
     git: https://github.com/someodd/venusia.git
     name: Venusia
     pantry-tree:
-      sha256: 3097393cd670e3c8146bfb912bf8465e9f4659450c247594ad4bb35cf314dcb7
-      size: 881
+      sha256: c4f8accae431857aa9115cefee7e61416019ef2d9ed8dc80a640b72a673e0395
+      size: 880
     version: 0.1.0.0
   original:
-    commit: 1a6218582e5d73ff0d631222e2d0ee338a2b0749
+    commit: 371166432bb2b260810e77a14770b082f3f31d77
     git: https://github.com/someodd/venusia.git
 - completed:
     commit: 03348a35eefa1adbbadfa8c1d32c55210a6a0093

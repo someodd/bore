@@ -69,7 +69,7 @@ routes sourceDirectoryAbsolutePath absoluteOutputPath serveRootOnDisk host port 
   [ on "/search" (handleSearch sourceDirectoryAbsolutePath absoluteOutputPath host port)
   , onWildcard "*" $ \request ->
       case request.reqWildcard of
-        Just wildcard -> serveDirectory host port serveRootOnDisk "/" wildcard
+        Just wildcard -> serveDirectory host port serveRootOnDisk "/" wildcard Nothing
         Nothing -> pure $ TextResponse "No wildcard provided."
   ]
 

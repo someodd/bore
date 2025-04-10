@@ -5,6 +5,10 @@ user in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+* Upgraded `Venusia` for gateway support (configurable!)
+
 ## [0.49.0.0] - 2025-04-10
 
 This is a dummy release designed to include `example/`. I should phase this out soon.

@@ -5,6 +5,10 @@ user in the changelog.
 
 ## [Unreleased]
 
+### Changed
+
+* Updated `Venusia` dependency, so now I think directory listings should look nicer
+
 ## [0.47.0.0] - 2025-04-10
 
 ### Added

@@ -5,6 +5,8 @@ user in the changelog.
 
 ## [Unreleased]
 
+## [0.48.0.0] - 2025-04-10
+
 ### Changed
 
 * Updated `Venusia` dependency, so now I think directory listings should look nicer
@@ -320,7 +322,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.47.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.48.0.0...HEAD
+[0.48.0.0]: https://github.com/someodd/bore/compare/v0.47.0.0...v0.48.0.0
 [0.47.0.0]: https://github.com/someodd/bore/compare/v0.46.0.0...v0.47.0.0
 [0.46.0.0]: https://github.com/someodd/bore/compare/v0.45.0.0...v0.46.0.0
 [0.45.0.0]: https://github.com/someodd/bore/compare/v0.44.0.0...v0.45.0.0

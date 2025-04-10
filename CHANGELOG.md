@@ -5,6 +5,10 @@ user in the changelog.
 
 ## [Unreleased]
 
+### Fixed
+
+* Simply upgraded `Venusia` to fix wildcard matching
+
 ## [0.50.0.0] - 2025-04-10
 
 ### Added

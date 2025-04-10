@@ -1,5 +1,0 @@
-{{! For Phlog post meta. }}
-Posted: {{ published }}
-Updated: {{ updated }}
-Author: {{ author }}
-Tags: {{#tags}}{{ . }} {{/tags}}

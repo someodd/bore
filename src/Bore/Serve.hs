@@ -9,6 +9,7 @@ module Bore.Serve (runServerWithConfig) where
 
 import Ryvm.Search (getSearchResults, SearchResult(..))
 import Venusia.Server
+import Venusia.Gateway
 import Venusia.FileHandler
 import Venusia.MenuBuilder
 
@@ -96,7 +97,8 @@ runServerWithConfig boreConfig sourceDirectoryAbsolutePath absoluteOutputPath = 
     port = (fromIntegral $ fromMaybe 70 boreConfig.listenPort :: Int)
     address = (fromMaybe "localhost" boreConfig.listenAddress)
   putStrLn . T.unpack $ "Starting server on " <> address <> ":" <> T.pack (show port)
+  gatewayRoutes <- loadGatewayRoutes $ sourceDirectoryAbsolutePath </> "gateways.toml"
   serve
     (show port)
     noMatchHandler
-    (routes sourceDirectoryAbsolutePath absoluteOutputPath absoluteOutputPath boreConfig.hostname port)
+    (gatewayRoutes ++ routes sourceDirectoryAbsolutePath absoluteOutputPath absoluteOutputPath boreConfig.hostname port)

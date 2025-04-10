@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           bore
-version:        0.49.0.0
+version:        0.50.0.0
 synopsis:       Build gopherholes.
 description:    Static site builder, but for gopherholes. Manage phlogs with tags, use the Markdown renderer and Mustache templating system.
 category:       Network

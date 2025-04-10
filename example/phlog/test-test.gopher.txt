@@ -1,0 +1,23 @@
+---
+date: 2024-09-16
+parent: post.txt
+title: cozy
+tags: [frogs, dogs, cats, ducks]
+gophermap: true
+---
+
+this is a test file
+
+testing some more stuff
+
+what about tags, what about the links for that?
+
+0Link to another file	/another.gopher.txt
+
+7Search	/search
+
+test
+
+{{phlog}}
+
+{{parent}}

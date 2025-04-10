@@ -5,6 +5,16 @@ user in the changelog.
 
 ## [Unreleased]
 
+### Added
+
+* Utilizing built-in file browser `Venusia` provides!
+
+### Changed
+
+* Since I'm starting to use `Ryvm` as a dependency, the search has changed a bit. It's not
+  optimimal at the moment, because I need to strip gophermap syntax from the results and
+  when searching, but it'll get there.
+
 ## [0.46.0.0] - 2025-04-07
 
 ### Changed

@@ -5,6 +5,10 @@ user in the changelog.
 
 ## [Unreleased]
 
+### Fixed
+
+* By upgrading a dependency, fix gateway parsing
+
 ## [0.51.0.0] - 2025-04-10
 
 ### Fixed

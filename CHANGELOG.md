@@ -5,6 +5,8 @@ user in the changelog.
 
 ## [Unreleased]
 
+## [0.52.0.0] - 2025-04-14
+
 ### Fixed
 
 * By upgrading a dependency, fix gateway parsing
@@ -342,7 +344,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.51.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.52.0.0...HEAD
+[0.52.0.0]: https://github.com/someodd/bore/compare/v0.51.0.0...v0.52.0.0
 [0.51.0.0]: https://github.com/someodd/bore/compare/v0.50.0.0...v0.51.0.0
 [0.50.0.0]: https://github.com/someodd/bore/compare/v0.49.0.0...v0.50.0.0
 [0.49.0.0]: https://github.com/someodd/bore/compare/v0.48.0.0...v0.49.0.0

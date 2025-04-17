@@ -5,6 +5,10 @@ user in the changelog.
 
 ## [Unreleased]
 
+### Fixed
+
+* By upgrading a dependency (Venusia), fix README.txt link in directory listings
+
 ## [0.52.0.0] - 2025-04-14
 
 ### Fixed

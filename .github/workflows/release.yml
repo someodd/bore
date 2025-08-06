@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to simulate (without v prefix)'
+        description: 'Version to build (without v prefix)'
         required: true
         default: '1.0.0-test'
       skip_publish:
@@ -17,82 +17,53 @@ on:
 
 jobs:
   release:
-    name: Build and Release
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    - uses: actions/checkout@v4
+    
+    - uses: haskell-actions/setup@v2
+      with:
+        ghc-version: '9.4.8'
+        stack-version: 'latest'
+        enable-stack: true
+        
+    - name: Determine Version
+      id: version
+      run: |
+        if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
+          echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        elif [[ $GITHUB_EVENT_NAME == 'workflow_dispatch' ]]; then
+          echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+        fi
 
-      - name: Get Version from Tag or Input
-        id: get_version
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-            echo "TESTING=true" >> $GITHUB_OUTPUT
-          else
-            echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-            echo "TESTING=false" >> $GITHUB_OUTPUT
-          fi
+    - name: Build with Stack
+      run: stack build --copy-bins --local-bin-path ./dist
+      
+    - name: Create Debian package
+      run: |
+        sudo gem install fpm
 
-      - name: Install System Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y z3 ruby ruby-dev rubygems build-essential
-          sudo gem install --no-document fpm
-
-      - name: Setup Haskell
-        uses: haskell-actions/setup@v2
-        with:
-          ghc-version: '9.6.3'
-          enable-stack: 'true'
-          stack-version: 'latest'
-
-      - name: Install Dependencies
-        run: stack build --only-dependencies
-
-      - name: Create GitHub Release
-        id: create_release
-        if: github.event.inputs.skip_publish != 'true'
-        uses: softprops/action-gh-release@v1
-        with:
-          body_path: CHANGELOG.md
-          draft: false
-          prerelease: false
-          tag_name: v${{ steps.get_version.outputs.VERSION }}
-
-      - name: Build and Package
-        id: build_package
-        run: |
-          # Set optimal GHC options for the build
-          export STACK_BUILD_OPTS="--ghc-options=\"-O2 -j$(nproc) +RTS -N$(nproc) -A128m -n2m -qg -RTS\""
+        # Create directory structure for the binary
+        mkdir -p pkg/usr/bin
+        
+        # Copy the main executable (assuming it's named 'bore-exe' by Stack)
+        cp ./dist/bore-exe pkg/usr/bin/bore
+        chmod +x pkg/usr/bin/bore
+        
+        # Build the Debian package with fpm
+        fpm -s dir -t deb -n bore -v ${{ steps.version.outputs.version }} \
+          --description "A simple CLI for tunneling local ports to a remote server" \
+          --maintainer "someodd <hi@someodd.zip>" \
+          --url "https://github.com/someodd/bore" \
+          --license "BSD-3-Clause" \
+          --depends libc6 --depends libgmp10 --depends zlib1g \
+          -C pkg usr/bin/bore
           
-          # Modify package.sh to use these options or pass them directly
-          chmod +x ./reposcripts/package.sh
-          PACKAGE_PATH=$(STACK_BUILD_OPTS="$STACK_BUILD_OPTS" ./reposcripts/package.sh | tail -n1)
-          echo "package_path=$PACKAGE_PATH" >> $GITHUB_OUTPUT
-          echo "Package path: $PACKAGE_PATH"
-
-      - name: Upload Release Asset
-        if: github.event.inputs.skip_publish != 'true'
-        uses: softprops/action-gh-release@v1
-        with:
-          files: ${{ steps.build_package.outputs.package_path }}
-          tag_name: v${{ steps.get_version.outputs.VERSION }}
-
-      - name: Output Results (Test Mode)
-        if: steps.get_version.outputs.TESTING == 'true'
-        run: |
-          echo "🧪 WORKFLOW TEST COMPLETED 🧪"
-          echo "✅ Build completed successfully"
-          echo "📦 Package created at: ${{ steps.build_package.outputs.package_path }}"
-          echo "🔖 Simulated version: v${{ steps.get_version.outputs.VERSION }}"
-          
-          if [[ "${{ github.event.inputs.skip_publish }}" == "true" ]]; then
-            echo "⏭️ Publishing was skipped (test mode)"
-          else
-            echo "📢 Publishing was executed"
-          fi
+    - name: Publish Release
+      if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !github.event.inputs.skip_publish)
+      uses: softprops/action-gh-release@v1
+      with:
+        files: "*.deb"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

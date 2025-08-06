@@ -59,8 +59,6 @@ dependencies:
   - aeson
   - commonmark-extensions
   - yaml
-  - Venusia
-  - ryvm
   - safe
   - mime-types
   - regex-tdfa

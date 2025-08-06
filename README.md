@@ -1,6 +1,6 @@
 # Bore: Join the Gopher Protocol
 
-Think something like Jekyll (static site builder), but for [gopherspace](https://gopher.mills.io/gopherproject.org). Comes bundled with a Gopher server (branched from [spacecookie](https://github.com/sternenseemann/spacecookie)) with a search feature.
+Think something like Jekyll (static site builder), but for [gopherspace](https://gopher.mills.io/gopherproject.org). To actually serve the built content, try [my Gopher server software, Venusia](https://github.com/someodd/venusia).
 
 [Example bore project (source code from my gopherhole)](https://github.com/someodd/gopher.someodd.zip), try building it with bore and messing around with it.
 
@@ -15,15 +15,8 @@ If you want you can simply run `stack build` in the repo.
 ## Features
 
 * Build your phlog into a Jekyll blog with a single command
-* Built-in server
-  * Configurable
-  * Development mode to test changes locally
-  * Can watch a directory and update your gopherhole when you make changes
-  * Search! People can search your gopherhole~
-    * [Formally-verified](https://en.wikipedia.org/wiki/Formal_verification)
-    * property tested
-
 * Supports [Bucktooth shorthand](https://raw.githubusercontent.com/jgoerzen/pygopherd/refs/heads/master/doc/standards/gophermap.txt) for writing gophermaps/menus+support for `.gophermap`
+
 * Phlogging features (blogging, but for gopher)
   * Tagging system
   * RSS/Atom feed generation
@@ -44,25 +37,6 @@ If you want you can simply run `stack build` in the repo.
   * Flow control
   * Based on Mustache
   * templating! {{like this for variables}}, but even figlet font functions and ASCII art container support
-
-
-## Quickstart
-
-After installing Bore, try cloning this demo repo:
-
-```
-git clone https://github.com/someodd/personal-gopherhole
-```
-
-Then try this commands:
-
-```
-bore watchServe --source ./personal-gopherhole --output /tmp/gopherout --dev-mode
-```
-
-Visit the gopherhole at [gopher://localhost:7071](gopher://localhost:7071). Try opening that URL in [Lagrange](https://gmi.skyjake.fi/lagrange/) (ssee also: `lynx`, `gopher`, or even [Dillo](https://dillo-browser.github.io/). I also made my own client [Waffle](https://github.com/someodd/waffle)).
-
-Try messing with/reading the files in `personal-gopherhole`. When you change something it'll rebuild the gopherhole. Refresh Lagrange/your client to see the changes.
 
 ## Very opinionated structure
 
@@ -149,27 +123,7 @@ I use the old school, lightweight [Window Maker](http://www.windowmaker.org/)
 Unstable.
 ```
 
-## Running a server
-
-Join gopherspace!
-
-* Be sure to edit your project's `bore.toml`
-  * If you have permission errors you can comment out the `user` entry line, also try running on port `7071`.
-  * Make sure to edit your `hostname` to be a domain pointing at your server
-  * I recommend just leaving `listenAddress` as `::` unless you know what you're doing.
-
-If you installed the `.deb` package you can use handy commands like:
-
-```
-sudo service bore restart
-sudo journalctl -u bore.service
-```
-
-Otherwise you'll need to manually run the server with a command like this:
-
-```
-bore watchServe --source /path/to/your/gopherhole-project --output /path/where/files/output/to
-```
+## Assets
 
 The *assets* directory doesn't get wiped when the goperhole is rebuilt (in the output directory), so if you want put large files in your output directory's `asset/` subdirectory.
 
@@ -178,6 +132,8 @@ The *assets* directory doesn't get wiped when the goperhole is rebuilt (in the o
 Let's make a secure/chroot'd setup for sftp'ing source (and assets) updates using the pre-existing `bore` user the package installs.
 
 #### Server setup
+
+I have to update this for instructions on using with [Venusia](https://github.com/someodd/venusia).
 
 Create the required directories:
 

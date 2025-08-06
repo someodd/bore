@@ -31,7 +31,6 @@ library
       Bore.Library
       Bore.Parse
       Bore.Phlog
-      Bore.Serve
       Bore.Text.Clean
       Bore.Text.Containers
       Bore.Text.Figlet
@@ -56,8 +55,7 @@ library
       DuplicateRecordFields
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Werror
   build-depends:
-      Venusia
-    , aeson
+      aeson
     , ansi-wl-pprint
     , base
     , bytestring
@@ -82,7 +80,6 @@ library
     , parsec
     , regex-compat
     , regex-tdfa
-    , ryvm
     , safe
     , split
     , text
@@ -112,8 +109,7 @@ executable bore
       OverloadedRecordDot
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Werror
   build-depends:
-      Venusia
-    , aeson
+      aeson
     , ansi-wl-pprint
     , base
     , bore
@@ -139,7 +135,6 @@ executable bore
     , parsec
     , regex-compat
     , regex-tdfa
-    , ryvm
     , safe
     , split
     , text
@@ -165,8 +160,7 @@ test-suite bore-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Werror -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      Venusia
-    , aeson
+      aeson
     , ansi-wl-pprint
     , base
     , bore
@@ -192,7 +186,6 @@ test-suite bore-test
     , parsec
     , regex-compat
     , regex-tdfa
-    , ryvm
     , safe
     , split
     , text

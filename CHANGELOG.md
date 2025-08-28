@@ -5,6 +5,8 @@ user in the changelog.
 
 ## [Unreleased]
 
+## [0.55.0.0] - 2025-08-27
+
 ### Removed
 
 * Everything to do with hosting a Gopher server, basically, as I have separated those responsibilities to [Venusia](https://github.com/someodd/venusia)
@@ -354,7 +356,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.54.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.55.0.0...HEAD
+[0.55.0.0]: https://github.com/someodd/bore/compare/v0.54.0.0...v0.55.0.0
 [0.54.0.0]: https://github.com/someodd/bore/compare/v0.53.0.0...v0.54.0.0
 [0.53.0.0]: https://github.com/someodd/bore/compare/v0.52.0.0...v0.53.0.0
 [0.52.0.0]: https://github.com/someodd/bore/compare/v0.51.0.0...v0.52.0.0

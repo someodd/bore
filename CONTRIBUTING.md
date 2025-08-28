@@ -53,7 +53,7 @@ sudo act workflow_dispatch -j release \
   -C /home/tilde/Projects/bore \
   --pull=false \
   -P ubuntu-latest=catthehacker/ubuntu:full-24.04 \
-  --container-options 'stack -v /tmp/bore-act-out:/__act_out' \
+  --container-options 'stack -v /tmp/bore-act-out:/var/tmp/deb-pkg' \
   -e /tmp/act_event_release.json
 ```
 

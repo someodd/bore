@@ -100,7 +100,10 @@ jobs:
       # This step only runs on actual tag pushes, not on manual workflow_dispatch runs
       # unless the 'skip_publish' input is explicitly false (which is not a default condition).
       - name: Publish Release
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        if: |
+          (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) ||
+          (github.event_name == 'workflow_dispatch' &&
+            (github.event.inputs.skip_publish == 'false' || github.event.inputs.skip_publish == false))
         uses: softprops/action-gh-release@v1
         with:
           files: "$PKG_OUT/*.deb"

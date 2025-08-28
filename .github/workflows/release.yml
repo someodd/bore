@@ -22,7 +22,7 @@ jobs:
 
     env:
       # Define a consistent output directory for packaged artifacts
-      PKG_OUT: '/__act_out'
+      PKG_OUT: '/var/tmp/deb-pkg'
 
     steps:
       # 1. Check out the repository code

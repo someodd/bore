@@ -99,6 +99,8 @@ jobs:
       # 7. Publish the .deb file as a release artifact
       # This step only runs on actual tag pushes, not on manual workflow_dispatch runs
       # unless the 'skip_publish' input is explicitly false (which is not a default condition).
+      #
+      # But even then, GitHub Releases requires a tag...
       - name: Publish Release
         if: |
           (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) ||

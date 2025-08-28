@@ -5,8 +5,6 @@ user in the changelog.
 
 ## [Unreleased]
 
-## [0.54.0.0] - 2025-08-05
-
 ### Removed
 
 * Everything to do with hosting a Gopher server, basically, as I have separated those responsibilities to [Venusia](https://github.com/someodd/venusia)

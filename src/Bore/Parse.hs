@@ -110,7 +110,7 @@ possiblyGopherize someText maybeFrontMatter library = do
                 then
                     let
                         hostname = library.config.server.hostname
-                        port = fromMaybe 70 (fromIntegral <$> library.config.server.listenPort)
+                        port = fromMaybe 70 (fromIntegral <$> library.config.server.hostPort)
                     in
                         toGophermap hostname port someText
                 else
@@ -202,7 +202,7 @@ handleAllFiles library projectDirectoryAbsolutePath outputDirectoryAbsolutePath 
 -- creating gophermaps, where the host/port is assumed.
 applyDevMode :: Config -> Bool -> Config
 applyDevMode config True = 
-  config { server = (server config) { hostname = Text.pack "localhost", user = Nothing } }
+  config { server = (server config) { hostname = Text.pack "localhost" } }
 applyDevMode config False = config
 
 {- | Main entrypoint to build the entire gopherhole project.
@@ -230,6 +230,6 @@ buildTree sourceDirectory outputDirectory devMode = do
     -- FIXME: doing the maybe logic here and elsewhere is very bad--should occur in Config.hs with defaults\
     buildPhlogIndexes
         (library.config.server.hostname)
-        (fromMaybe 70 (fromIntegral <$> library.config.server.listenPort))
+        (fromMaybe 70 (fromIntegral <$> library.config.server.hostPort))
         outputDirectoryAbsolutePath
         phlogMeta

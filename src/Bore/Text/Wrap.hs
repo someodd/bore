@@ -149,7 +149,7 @@ instance IsInline WrapRenderer where
   let
     imageGopherType = imagePathToGopherType (T.unpack url)
   isGopherMap <- gets (gopherMap . config)
-  port <- gets (T.pack . show . fromMaybe 70 . listenPort . server . Library.config . library . config)
+  port <- gets (T.pack . show . fromMaybe 70 . hostPort . server . Library.config . library . config)
   host <- gets (hostname . server . Library.config . library . config)
   if isGopherMap
     then return $ (T.pack [imageGopherType]) <> altText <> "\t" <> url <> "\t" <> host <> "\t" <> port
@@ -181,7 +181,7 @@ wrapMarkdownParagraphs library gopherMap width input = do
    formatFootnote (n, (text, url)) = do
     let
       host = library.config.server.hostname
-      port = T.pack . show . fromMaybe 70 $ library.config.server.listenPort
+      port = T.pack . show . fromMaybe 70 $ library.config.server.hostPort
     if gopherMap
       then
         case gopherTypeByExt "text/" $ T.unpack url of

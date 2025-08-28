@@ -1,15 +1,16 @@
 name: Release
 
 on:
+  # Run when a new version tag is pushed (e.g., v1.2.3)
   push:
-    tags:
-      - 'v*'
+    tags: ['v*']
+  # Allow manual runs from the GitHub Actions UI
   workflow_dispatch:
     inputs:
       version:
         description: 'Version to build (without v prefix)'
-        required: true
-        default: '1.0.0-test'
+        required: false
+        default: '1.0.0-local'
       skip_publish:
         description: 'Skip actual publishing of release'
         type: boolean
@@ -17,53 +18,91 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
-    
+    runs-on: ubuntu-22.04
+
+    env:
+      # Define a consistent output directory for packaged artifacts
+      PKG_OUT: '/__act_out'
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - uses: haskell-actions/setup@v2
-      with:
-        ghc-version: '9.4.8'
-        stack-version: 'latest'
-        enable-stack: true
-        
-    - name: Determine Version
-      id: version
-      run: |
-        if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
-          echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-        elif [[ $GITHUB_EVENT_NAME == 'workflow_dispatch' ]]; then
-          echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-        fi
+      # 1. Check out the repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Build with Stack
-      run: stack build --copy-bins --local-bin-path ./dist
-      
-    - name: Create Debian package
-      run: |
-        sudo gem install fpm
+      # 2. Robustly determine the version number for the build
+      - name: Determine Version
+        id: version
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          set -euo pipefail
+          # If triggered by a tag push, use the tag name
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          # If triggered manually, use the user-provided input
+          elif [[ -n "${INPUT_VERSION:-}" ]]; then
+            VERSION="${INPUT_VERSION}"
+          # Fallback for other cases
+          else
+            VERSION="1.0.0-local"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Determined version: ${VERSION}"
 
-        # Create directory structure for the binary
-        mkdir -p pkg/usr/bin
-        
-        # Copy the main executable (assuming it's named 'bore-exe' by Stack)
-        cp ./dist/bore-exe pkg/usr/bin/bore
-        chmod +x pkg/usr/bin/bore
-        
-        # Build the Debian package with fpm
-        fpm -s dir -t deb -n bore -v ${{ steps.version.outputs.version }} \
-          --description "A simple CLI for tunneling local ports to a remote server" \
-          --maintainer "someodd <hi@someodd.zip>" \
-          --url "https://github.com/someodd/bore" \
-          --license "BSD-3-Clause" \
-          --depends libc6 --depends libgmp10 --depends zlib1g \
-          -C pkg usr/bin/bore
-          
-    - name: Publish Release
-      if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !github.event.inputs.skip_publish)
-      uses: softprops/action-gh-release@v1
-      with:
-        files: "*.deb"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # 3. Set up Haskell environment using ghcup (BEST PRACTICE)
+      # This action uses ghcup to install the specified GHC and Stack versions.
+      # It also intelligently caches ~/.stack and your project's .stack-work directory.
+      - name: Set up Haskell (GHC 9.6.3 and Stack)
+        uses: haskell-actions/setup@v2
+        with:
+          ghc-version: '9.6.3'
+          stack-version: 'latest'
+          enable-stack: true # This enables caching for stack dependencies
+
+      # 4. Build the project using Stack
+      # The --allow-different-user flag is no longer needed because ghcup installs
+      # the toolchain for the current user.
+      - name: Build with Stack
+        run: stack build --copy-bins --local-bin-path ./dist
+
+      # 5. Install Ruby and FPM for Debian packaging
+      - name: Install Ruby toolchain for fpm
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ruby ruby-dev build-essential binutils
+          sudo gem install fpm
+
+      # 6. Create the Debian package using the built binary
+      - name: Create Debian package
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # Prepare the package structure
+          install -Dm755 ./dist/bore pkg/usr/bin/bore
+          mkdir -p "$PKG_OUT"
+
+          # Run fpm to create the .deb file
+          fpm -s dir -t deb -n bore -v "${VERSION}" \
+            --description="A simple CLI for tunneling local ports to a remote server" \
+            --maintainer="someodd <hi@someodd.zip>" \
+            --url="https://github.com/someodd/bore" \
+            --license="BSD-3-Clause" \
+            --depends=libc6 --depends=libgmp10 --depends=zlib1g \
+            -C pkg \
+            -p "$PKG_OUT/bore_${VERSION}_amd64.deb" \
+            usr/bin/bore
+
+          echo "Created Debian package:"
+          ls -lh "$PKG_OUT"/*.deb
+
+      # 7. Publish the .deb file as a release artifact
+      # This step only runs on actual tag pushes, not on manual workflow_dispatch runs
+      # unless the 'skip_publish' input is explicitly false (which is not a default condition).
+      - name: Publish Release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "$PKG_OUT/*.deb"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

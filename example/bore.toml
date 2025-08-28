@@ -6,15 +6,4 @@
 # .gophermap file spec to output complete serve as-is gopher menus (gopher menus must
 # include port and host).
 hostname = "localhost"
-# Now this actually sets what the server listens on. You can restrict it to a specific
-# address or I think even a hostname. The default is "::" which is all addresses.
-listenAddress = "::"
-# This is the port the server listens on. The default is 70 (I think this is the port the
-# Gopher Protocol RFC 1436 specifies).
-listenPort = 7070
-# This is the user the server runs as. This is useful for dropping privileges. The default
-# is the user that started the server, so that can be null. Uncomment to define.
-# user = "nobody"
-# Below is the root directory of the server. This is where the server will serve files from.
-# The default is the project root + default output directory. Uncomment to define.
-# root = "/var/gopher"
+hostPort = 70

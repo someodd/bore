@@ -20,14 +20,13 @@ import Toml
 -- For Maybe really need to have defaults--maybe i can use a default type
 data ServerConfig = ServerConfig
   { hostname :: Text
-  , listenAddress :: Maybe Text
-  , listenPort :: Maybe Integer
-  , user :: Maybe Text
+  , hostPort :: Maybe Integer
   } deriving (Generic, Show, Eq)
 
 serverConfigCodec :: TomlCodec ServerConfig
 serverConfigCodec = Toml.genericCodec
 
+-- Done this way as to be easily extended!
 data Config = Config
     { server :: ServerConfig
     }

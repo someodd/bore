@@ -48,7 +48,7 @@ replaceGophermapLinks :: Bool -> ServerConfig -> Text.Text -> Text.Text
 replaceGophermapLinks overridePort config input =
   let
     hostForRelativeLinks = hostname config
-    portForRelativeLinks = if overridePort then 70 else fromMaybe 70 (listenPort config)
+    portForRelativeLinks = if overridePort then 70 else fromMaybe 70 config.hostPort
     -- For full gophermap lines:
     --   Group1: file type
     --   Group2: display text (everything up to a tab)
@@ -252,7 +252,7 @@ renderJekyllPost :: FilePath -> ServerConfig -> FrontMatter -> Text.Text -> Text
 renderJekyllPost postFileName config frontMatter frontMatterText body = do
     let
         overridePort = True  -- Making room for a future update where this is more controllable. also matches the regex link replacing action
-        port = if overridePort then 70 else fromMaybe 70 config.listenPort
+        port = if overridePort then 70 else fromMaybe 70 config.hostPort
         number = if fromMaybe False frontMatter.gophermap then "1" else "0"
         uri = "gopher://" <> config.hostname <> ":" <> Text.pack (show port) <> "/" <> number <> "/" <> Text.pack phlogDirectory <> Text.pack postFileName <> ".txt"
     Text.unlines

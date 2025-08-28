@@ -108,6 +108,6 @@ jobs:
             (github.event.inputs.skip_publish == 'false' || github.event.inputs.skip_publish == false))
         uses: softprops/action-gh-release@v1
         with:
-          files: "$PKG_OUT/*.deb"
+          files: ${{ env.PKG_OUT }}/*.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

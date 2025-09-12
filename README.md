@@ -65,7 +65,7 @@ One of Bore's powerful features is its ability to convert your phlog into a Jeky
 To do this, run the `jekyll` command:
 
 ```bash
-bore jekyll --source /path/to/your/gopherhole --output /path/to/your/jekyll/_posts
+bore jekyll --source /path/to/your/gopherhole --output /path/to/your/jekyll-site/
 ```
 
 Bore provides two special frontmatter fields to control the Jekyll output:

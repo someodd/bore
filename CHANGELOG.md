@@ -5,6 +5,12 @@ user in the changelog.
 
 ## [Unreleased]
 
+## [0.56.0.0] - 2025-09-13
+
+### Changed
+
+* The behavior of deleting the contents of the output directory (except for assets/) before building the new contents is no longer the default. To re-engage this behavior use the `--reset` flag with the `build` command.
+
 ## [0.55.0.0] - 2025-08-27
 
 ### Removed
@@ -356,7 +362,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.55.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.56.0.0...HEAD
+[0.56.0.0]: https://github.com/someodd/bore/compare/v0.55.0.2...v0.56.0.0
 [0.55.0.0]: https://github.com/someodd/bore/compare/v0.54.0.0...v0.55.0.0
 [0.54.0.0]: https://github.com/someodd/bore/compare/v0.53.0.0...v0.54.0.0
 [0.53.0.0]: https://github.com/someodd/bore/compare/v0.52.0.0...v0.53.0.0

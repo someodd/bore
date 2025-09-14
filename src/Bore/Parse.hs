@@ -58,6 +58,7 @@ import System.FilePath (makeRelative)
 import Data.Maybe (fromMaybe, catMaybes)
 import System.Directory (doesDirectoryExist)
 import qualified Data.Text as Text
+import Control.Monad (when)
 
 -- FIXME: use constant
 isInPhlog :: FilePath -> Bool
@@ -210,12 +211,12 @@ applyDevMode config False = config
 The file paths can be absolute or relative, they will be made absolute.
 
 -}
-buildTree :: FilePath -> FilePath -> Bool-> IO ()
-buildTree sourceDirectory outputDirectory devMode = do
+buildTree :: FilePath -> FilePath -> Bool-> Bool -> IO ()
+buildTree sourceDirectory outputDirectory devMode reset = do
     sourceDirectoryAbsolutePath <- canonicalizePath sourceDirectory
     outputDirectoryAbsolutePath <- canonicalizePath outputDirectory
 
-    _ <- resetOutputDirectory outputDirectoryAbsolutePath
+    when reset $ resetOutputDirectory outputDirectoryAbsolutePath
 
     libraryBeforeCheck <- loadOnce sourceDirectoryAbsolutePath
     -- apply applyDevMode to the config in library

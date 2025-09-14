@@ -49,7 +49,7 @@ sudo chmod 1777 /tmp/bore-act-out
 printf '{"inputs":{"version":"1.0.0-test","skip_publish":"true"}}' > /tmp/act_event_release.json
 
 # run it
-sudo act workflow_dispatch -j release \ 
+sudo act workflow_dispatch -j release \
   -C /home/tilde/Projects/bore \
   --pull=false \
   -P ubuntu-latest=catthehacker/ubuntu:full-24.04 \

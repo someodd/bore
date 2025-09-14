@@ -27,7 +27,7 @@ determineDirectories maybeSourcePath maybeOutputPath = do
   return (sourcePath, outputPath)
 
 data Command = 
-    Build (Maybe FilePath) (Maybe FilePath) Bool
+    Build (Maybe FilePath) (Maybe FilePath) Bool Bool
   | Jekyll (Maybe FilePath) (Maybe FilePath) (Maybe String)
 
 commandParser :: Parser Command
@@ -51,6 +51,9 @@ buildParser = Build
      <> metavar "OUTPUT_DIR"
      <> help "Output directory" ))
   <*> switch
+      ( long "reset"
+     <> help "Wipe the output directory (except assets/ dir) before building." )
+  <*> switch
       ( long "dev-mode"
      <> help "Enable development mode (sets hostname to 'localhost' and disables user authentication)" )
 
@@ -73,9 +76,9 @@ defaultEntryPoint :: IO ()
 defaultEntryPoint = do
   command' <- execParser opts
   case command' of
-    Build maybeSourcePath maybeOutputPath forceLocalhost -> do
+    Build maybeSourcePath maybeOutputPath forceLocalhost reset -> do
       (absoluteSourcePath, absoluteOutputPath) <- determineDirectories maybeSourcePath maybeOutputPath
-      buildTree absoluteSourcePath absoluteOutputPath forceLocalhost
+      buildTree absoluteSourcePath absoluteOutputPath forceLocalhost reset
     Jekyll maybeSourcePath maybeOutputPath maybeAfter -> do
       (absoluteSourcePath, absoluteOutputPath) <- determineDirectories maybeSourcePath maybeOutputPath
       library <- loadOnce absoluteSourcePath

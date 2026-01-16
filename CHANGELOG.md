@@ -5,6 +5,8 @@ user in the changelog.
 
 ## [Unreleased]
 
+## [0.57.0.0] - 2026-01-15
+
 ### Fixed
 
 * Fix wrapping: don't wrap gopherlines
@@ -366,7 +368,8 @@ Gearing up for server daemon.
 
 * Initial release
 
-[unreleased]: https://github.com/someodd/bore/compare/v0.56.0.0...HEAD
+[unreleased]: https://github.com/someodd/bore/compare/v0.57.0.0...HEAD
+[0.57.0.0]: https://github.com/someodd/bore/compare/v0.56.0.0...v0.57.0.0
 [0.56.0.0]: https://github.com/someodd/bore/compare/v0.55.0.2...v0.56.0.0
 [0.55.0.0]: https://github.com/someodd/bore/compare/v0.54.0.0...v0.55.0.0
 [0.54.0.0]: https://github.com/someodd/bore/compare/v0.53.0.0...v0.54.0.0

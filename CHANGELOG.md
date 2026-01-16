@@ -5,6 +5,10 @@ user in the changelog.
 
 ## [Unreleased]
 
+### Fixed
+
+* Fix wrapping: don't wrap gopherlines
+
 ## [0.56.0.0] - 2025-09-13
 
 ### Changed

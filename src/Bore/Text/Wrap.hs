@@ -65,10 +65,22 @@ instance IsBlock WrapRenderer WrapRenderer where
  paragraph (WrapRenderer content) = WrapRenderer $ do
    state <- get
    let width = lineWidth (config state)
-   wrapped <- content
-   let wrappedNoNewlines = T.replace "\n" " " wrapped
-   return $ wrapText defaultWrapSettings width wrappedNoNewlines <> "\n\n"
-
+       isGopher = gopherMap (config state)
+ 
+   txt <- content
+ 
+   if isGopher && ("\t" `T.isInfixOf` txt)
+     then
+       -- Treat as already-formed menu entries; do NOT wrap.
+       -- Ensure it ends nicely as a block.
+       pure $ ensureEndsWithNewline txt <> "\n"
+     else do
+       let wrappedNoNewlines = T.replace "\n" " " txt
+       pure $ wrapText defaultWrapSettings width wrappedNoNewlines <> "\n\n"
+  where
+   ensureEndsWithNewline t =
+     if T.null t then t
+     else if T.last t == '\n' then t else t <> "\n"
  plain = id
 
  thematicBreak = WrapRenderer $ return "------------------------------\n"

@@ -5,6 +5,16 @@ user in the changelog.
 
 ## [Unreleased]
 
+### Changed
+
+* Behavior of `jekyll` to hopefully extract paths more reliably
+
+### Added
+
+* `--skip-assets` to `jekyll` so can skip copying assets
+* `--assets-dir` so can define source assets directory to check/copy from
+  when using the `jekyll` command
+
 ## [0.57.0.0] - 2026-01-15
 
 ### Fixed

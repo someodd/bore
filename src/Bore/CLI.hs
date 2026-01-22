@@ -28,7 +28,7 @@ determineDirectories maybeSourcePath maybeOutputPath = do
 
 data Command = 
     Build (Maybe FilePath) (Maybe FilePath) Bool Bool
-  | Jekyll (Maybe FilePath) (Maybe FilePath) (Maybe String)
+  | Jekyll (Maybe FilePath) (Maybe FilePath) (Maybe String) Bool (Maybe FilePath)
 
 commandParser :: Parser Command
 commandParser = subparser
@@ -71,6 +71,13 @@ jekyllParser = Jekyll
       ( long "after"
      <> metavar "DATE"
      <> help "Only process posts after the given date" ))
+  <*> switch
+      ( long "skip-assets"
+     <> help "Do not copy or generate assets" )
+  <*> optional (strOption
+      ( long "assets-dir"
+     <> metavar "PATH"
+     <> help "Override assets directory path" ))
 
 defaultEntryPoint :: IO ()
 defaultEntryPoint = do
@@ -79,10 +86,16 @@ defaultEntryPoint = do
     Build maybeSourcePath maybeOutputPath forceLocalhost reset -> do
       (absoluteSourcePath, absoluteOutputPath) <- determineDirectories maybeSourcePath maybeOutputPath
       buildTree absoluteSourcePath absoluteOutputPath forceLocalhost reset
-    Jekyll maybeSourcePath maybeOutputPath maybeAfter -> do
+    Jekyll maybeSourcePath maybeOutputPath maybeAfter skipAssets assetsDir -> do
       (absoluteSourcePath, absoluteOutputPath) <- determineDirectories maybeSourcePath maybeOutputPath
       library <- loadOnce absoluteSourcePath
-      ToJekyll.buildTree library.config.server absoluteSourcePath absoluteOutputPath (pack <$> maybeAfter)
+      ToJekyll.buildTree
+          library.config.server
+          absoluteSourcePath
+          absoluteOutputPath
+          (pack <$> maybeAfter)
+          skipAssets
+          assetsDir
   where
     opts = info (commandParser <**> helper)
       ( fullDesc

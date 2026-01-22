@@ -19,7 +19,8 @@ import System.Directory
       createDirectoryIfMissing,
       listDirectory,
       copyFile,
-      doesDirectoryExist )
+      doesDirectoryExist,
+      doesFileExist )
 import System.FilePath (takeBaseName, takeExtension, combine, makeRelative, (</>), takeDirectory)
 import Control.Monad (forM_)
 import Data.Maybe (fromMaybe)
@@ -30,8 +31,8 @@ import qualified Data.Text.Encoding as Text
 import qualified Data.Vector as V
 import Data.Aeson.Key (fromText)
 import Text.Regex.TDFA.Text ()
-import Text.Regex.TDFA ((=~))
-import Text.Regex (mkRegex, matchRegexAll, subRegex)
+import Text.Regex.TDFA ((=~), AllTextMatches (getAllTextMatches))
+import qualified Data.List as List
 
 {-| Detect and replace Gophermap links with Markdown links.
 
@@ -120,36 +121,31 @@ replaceGophermapLinks overridePort config input =
 
   in Text.unlines (go False (Text.lines input))
 
-{- | Get all of the file paths for assets in a post and for the body text replace
-"/assets/" with "/assets/phlog/".
+{- | Get all of the file paths for assets in a post.
 
-Any filepath found that begins with /assets/ is considered an asset, there must be a space
-or tab preceding it and a tab or newline after it.
+Any filepath found that begins with /assets/ is considered an asset.
 
+Must work for:
+- YAML frontmatter:  path: /assets/...
+- Markdown images:   ![](/assets/...)
+- HTML:              <img src="/assets/...">
+
+Does NOT rewrite the body. Whatever is referenced as /assets/ stays /assets/.
 -}
 extractAssets :: Text.Text -> (Text.Text, [Text.Text])
 extractAssets body =
-  let -- Pattern breakdown:
-      --   Group 1: ([ \t])   => a space or tab preceding the asset path.
-      --   Group 2: (/assets/) => the literal string.
-      --   Group 3: (\S+)      => one or more non-whitespace characters (the rest of the asset path).
-      pattern = "([ \\t])(/assets/)(\\S+)"
-      s       = Text.unpack body
-      re      = mkRegex pattern
-      -- Recursively extract asset paths (unmodified) from the string.
-      extractAssets' :: String -> [String]
-      extractAssets' str =
-        case matchRegexAll re str of
-          Nothing -> []
-          Just (_, _, rest, subs) ->
-              -- Expected subs = [group1, group2, group3]
-              (subs !! 1 ++ subs !! 2) : extractAssets' rest
-      assets  = map Text.pack (extractAssets' s)
-      -- Replace the asset paths with the phlog version.
-      -- The replacement string reassembles the match as:
-      --   Group 1 + "/assets/phlog/" + Group 3.
-      newBody = Text.pack (subRegex re s "\\1/assets/phlog/\\3")
-  in (newBody, assets)
+  let
+    -- Match /assets/... until a terminator.
+    pat :: Text.Text
+    pat = "/assets/[^][:space:])\"']+"
+
+    matches :: [Text.Text]
+    matches = getAllTextMatches (body =~ pat)
+
+    -- de-dupe, keep body unchanged (per your requirement)
+    assets = List.nub matches
+  in
+    (body, assets)
 
 {- | Copy assets from the source directory to the destination directory.
 
@@ -158,32 +154,47 @@ Don't worry/skip assets that already exist in destination or don't exist in sour
 Copies to destination `/assets/phlog/`.
 
 -}
-copyAssets
-    :: FilePath
-    -- ^ Absolute path to the source directory containing the project.
-    -> FilePath
-    -- ^ Absolute path to the destination directory where the project is built to.
-    -> [Text.Text]
-    -- ^ List of paths to assets found in a post, to copy over.
-    -> IO ()
-copyAssets sourceDir destDir assets = do
+copyAssets :: FilePath -> FilePath -> [Text.Text] -> IO ()
+copyAssets destDir assetsDir assets = do
     forM_ assets $ \asset -> do
-        let sourcePath = combine (sourceDir </> "assets") (makeRelative "/assets" $ Text.unpack asset)
-            newAssetDestPath = destDir </> "assets" </> "phlog" </> makeRelative "/assets" (Text.unpack asset)
+        let sourcePath = combine assetsDir (makeRelative "/assets" $ Text.unpack asset)
+            newAssetDestPath = destDir </> "assets" </> makeRelative "/assets" (Text.unpack asset)
         -- ensure the destination directory exists, including children directories
         createDirectoryIfMissing True (takeDirectory newAssetDestPath)
-        copyFile sourcePath newAssetDestPath
+
+        sourceFileExists <- doesFileExist sourcePath
+        if not sourceFileExists
+            then putStrLn $ "Asset not found, skipping: " ++ sourcePath
+            else do
+                putStrLn $ "Copying asset: " ++ sourcePath ++ " to " ++ newAssetDestPath
+                copyFile sourcePath newAssetDestPath
 
 -- | Parse a file into a Jekyll-compatible blog post.
-parseToJekyll :: ServerConfig -> FilePath -> FilePath -> FilePath -> FilePath -> FilePath -> Maybe Text.Text -> IO ()
-parseToJekyll config sourceDir postSourceDir destDir postDestDirRelative filePath maybeAfter = do
+parseToJekyll
+  :: ServerConfig
+  -> FilePath -> FilePath -> FilePath -> FilePath -> FilePath
+  -> Maybe Text.Text
+  -> Bool
+  -> Maybe FilePath
+  -> IO ()
+parseToJekyll config sourceDir postSourceDir destDir postDestDirRelative filePath maybeAfter skipAssets maybeAssetsDir = do
     content <- TextIO.readFile filePath
 
-    -- Extract assets and copy them to the destination directory. A little magic to make
-    -- having multimedia and downloads in a phlog post, porting over to Jekyll, all the
-    -- eaiser.
-    let (assetReplacedContent, assetsToCopy) = extractAssets content
-    copyAssets sourceDir destDir assetsToCopy
+    assetReplacedContent <-
+        if skipAssets
+            then
+                pure content
+            else do
+                -- Extract assets and copy them to the destination directory. A little magic to make
+                -- having multimedia and downloads in a phlog post, porting over to Jekyll, all the
+                -- eaiser.
+                let (assetReplacedContent, assetsToCopy) = extractAssets content
+                    assetsDir = fromMaybe (sourceDir </> "assets") maybeAssetsDir
+                putStrLn $ "extractAssets found " ++ show (length assetsToCopy) ++ " assets in " ++ filePath
+                forM_ assetsToCopy $ \a -> putStrLn $ "  asset: " ++ Text.unpack a
+
+                copyAssets destDir assetsDir assetsToCopy
+                pure assetReplacedContent
 
     let relativePath = makeRelative postSourceDir filePath
         frontMatterAndRest = parseFrontMatterIgnoreErrors assetReplacedContent
@@ -268,23 +279,30 @@ renderJekyllPost postFileName config frontMatter frontMatterText body = do
         ]
 
 -- | Process all files in the source directory.
-processFiles :: ServerConfig -> FilePath -> FilePath -> FilePath -> FilePath -> [FilePath] -> Maybe Text.Text -> IO ()
-processFiles config sourceDir postSourceDir destDir postDestDirRelative files maybeAfter = do
+processFiles
+  :: ServerConfig
+  -> FilePath -> FilePath -> FilePath -> FilePath
+  -> [FilePath]
+  -> Maybe Text.Text
+  -> Bool
+  -> Maybe FilePath
+  -> IO ()
+processFiles config sourceDir postSourceDir destDir postDestDirRelative files maybeAfter skipAssets maybeAssetsDir = do
     forM_ files $ \file -> do
         isDir <- doesDirectoryExist file
         if not isDir && takeExtension file `elem` [".txt", ".md"]
-            then parseToJekyll config sourceDir postSourceDir destDir postDestDirRelative file maybeAfter
+            then parseToJekyll config sourceDir postSourceDir destDir postDestDirRelative file maybeAfter skipAssets maybeAssetsDir
             else putStrLn $ "Skipping directory or unsupported file: " ++ file
 
 -- | Main function to build the Jekyll-compatible blog.
-buildTree :: ServerConfig -> FilePath -> FilePath -> Maybe Text.Text -> IO ()
-buildTree config sourceDir destDir maybeAfter = do
+buildTree :: ServerConfig -> FilePath -> FilePath -> Maybe Text.Text -> Bool -> Maybe FilePath -> IO ()
+buildTree config sourceDir destDir maybeAfter skipAssets maybeAssetsDir = do
     sourceDirAbs <- canonicalizePath sourceDir
     postSourceDirAbs <- canonicalizePath (sourceDir </> phlogDirectory)
     destDirAbs <- canonicalizePath destDir
     let postDestDirRelative = "phlog-mirror" </> "_posts"
     files <- listDirectoryRecursive postSourceDirAbs
-    processFiles config sourceDirAbs postSourceDirAbs destDirAbs postDestDirRelative files maybeAfter
+    processFiles config sourceDirAbs postSourceDirAbs destDirAbs postDestDirRelative files maybeAfter skipAssets maybeAssetsDir
 
 -- | Recursively list all files in a directory.
 listDirectoryRecursive :: FilePath -> IO [FilePath]
